@@ -8,7 +8,8 @@ from pyncm.apis.track import GetTrackDetail, GetTrackAudio
 from .async_wrapper import wrapper
 
 driver = get_driver()
-GetCurrentSession().headers['X-Real-IP'] = '118.88.88.88'
+GetCurrentSession().headers["X-Real-IP"] = "118.88.88.88"
+
 
 async def login():
     phone = getattr(driver.config, "netease_phone")
@@ -29,9 +30,7 @@ async def login():
 
 async def search(name, limit=9, page=1, stype=SONG):
     offset = limit * (page - 1)
-    return await wrapper(
-        GetSearchResult, name, stype=stype, limit=limit, offset=offset
-    )
+    return await wrapper(GetSearchResult, name, stype=stype, limit=limit, offset=offset)
 
 
 async def get_track_info(ids: list):

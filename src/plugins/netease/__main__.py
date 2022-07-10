@@ -32,7 +32,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -41,9 +41,9 @@ async def _(
             reply_to_message_id=event.message_id,
         )
 
-    msg_id = (
-        await matcher.send("搜索中……", reply_to_message_id=event.message_id)
-    )["result"]["message_id"]
+    msg_id = (await matcher.send("搜索中……", reply_to_message_id=event.message_id))[
+        "result"
+    ]["message_id"]
 
     tmp_search[salt := get_random_str()] = arg
     await edit_search_music_msg(bot, msg_id, event.chat.id, salt)
