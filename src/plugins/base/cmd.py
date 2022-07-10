@@ -18,21 +18,21 @@ def on_command(cmd: str | tuple, desc: str, *args, **kwargs):
 
 def get_cmd_list_txt():
     prefix = list(get_driver().config.command_start)[0]
-    return '\n'.join([f'{prefix}{x.command} - {x.description}' for x in command_list])
+    return "\n".join([f"{prefix}{x.command} - {x.description}" for x in command_list])
 
 
 @get_driver().on_bot_connect
 async def _(bot: Bot):
     command_list.sort(key=lambda x: x.command)
 
-    logger.info(f'Bot {bot.self_id} connected')
-    logger.info(f'Registered Commands:\n{get_cmd_list_txt()}')
+    logger.info(f"Bot {bot.self_id} connected")
+    logger.info(f"Registered Commands:\n{get_cmd_list_txt()}")
     await bot.set_my_commands(commands=command_list)
 
 
-@on_command('menu', '功能列表').handle()
+@on_command("menu", "功能列表").handle()
 async def _(matcher: Matcher, event: MessageEvent):
-    await matcher.send('Shigure☆功能列表\n'
-                       '-=-=-=-=-=-=-=-=-=-\n'
-                       f'{get_cmd_list_txt()}',
-                       reply_to_message_id=event.message_id)
+    await matcher.send(
+        "Shigure☆功能列表\n" "-=-=-=-=-=-=-=-=-=-\n" f"{get_cmd_list_txt()}",
+        reply_to_message_id=event.message_id,
+    )

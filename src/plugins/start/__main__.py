@@ -5,8 +5,9 @@ from nonebot.rule import to_me
 from ..base.cmd import on_command
 
 
-@on_command('start', '开始调教Shigure♡').handle()
+@on_command("start", "开始调教Shigure♡").handle()
 async def _(matcher: Matcher, event: MessageEvent):
-    await matcher.send('你好~我是Shigure~\n'
-                       '目前Bot功能正在持续开发中，不妨看看命令菜单（/menu）都有些啥吧！',
-                       reply_to_message_id=event.message_id)
+    await matcher.send(
+        "你好~我是Shigure~\n" "目前Bot功能正在持续开发中，不妨看看命令菜单（/menu）都有些啥吧！",
+        reply_to_message_id=event.message_id,
+    )
