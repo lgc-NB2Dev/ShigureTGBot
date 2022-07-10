@@ -17,7 +17,7 @@ def on_command(cmd: str | tuple, desc: str, *args, **kwargs):
 
 
 def get_cmd_list_txt():
-    prefix = get_driver().config.command_start
+    prefix = list(get_driver().config.command_start)[0]
     return '\n'.join([f'{prefix}{x.command} - {x.description}' for x in command_list])
 
 

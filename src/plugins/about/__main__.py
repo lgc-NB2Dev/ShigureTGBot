@@ -15,6 +15,6 @@ async def _(matcher: Matcher, event: MessageEvent):
                         '  - [Wutzu](https://berthua.top/)（服务器提供）\n'
                         '-=-=-=-=-=-=-=-=-=-\n'
                         '[请我喝杯奶茶](https://t.me/stu2333_pd/50) | [一起聊天](https://t.me/stu2333_home)'
-                        ).replace('-', '\-'),
+                        ).replace('-', '\-').replace('=', '\='),
                        reply_to_message_id=event.message_id,
                        parse_mode='MarkdownV2')
