@@ -1,5 +1,5 @@
 """
-/start 命令响应
+/about 命令响应，关于Bot
 """
 from .__main__ import *
 
