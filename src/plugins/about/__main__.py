@@ -12,7 +12,7 @@ async def _(matcher: Matcher, event: MessageEvent):
             '关于Shigure\n'
             '-=-=-=-=-=-=-=-=-=-\n'
             '开发者：[@lgc2333](https://t.me/@lgc2333)\n'
-            '开源地址：[Github](https://github.com/lgc2333/ShigureTGBot)'
+            '开源地址：[Github](https://github.com/lgc2333/ShigureTGBot)\n'
             '使用框架：[Nonebot2](https://github.com/nonebot/nonebot2)\n'
             '特别感谢：\n'
             '  - [Wutzu](https://berthua.top/)（服务器提供）\n'
