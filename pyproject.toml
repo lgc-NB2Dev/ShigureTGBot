@@ -10,6 +10,7 @@ python = ">=3.10,<4.0.0"
 nonebot2 = {extras = ["httpx"], version = "^2.0.0-beta.4"}
 nonebot-adapter-telegram = ">=0.1.0b2"
 pyncm = ">=1.6.6"
+awaits = "^0.0.1"
 
 [tool.poetry.dev-dependencies]
 nb-cli = ">=0.6.0"

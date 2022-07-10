@@ -46,6 +46,14 @@ python-versions = ">=3.7"
 tests = ["pytest", "pytest-asyncio", "mypy (>=0.800)"]
 
 [[package]]
+name = "awaits"
+version = "0.0.1"
+description = "async + threads + decorators = ?"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "binaryornot"
 version = "0.4.4"
 description = "Ultra-lightweight pure Python package to check if a file is binary or text."
@@ -644,7 +652,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.10,<4.0.0"
-content-hash = "a019e6d5d56177bdab655cada6214ce2b28e946068fc1fd32a373381dfac1876"
+content-hash = "b14f5a52cad0ef6c06af44fe5f0b53b27457e2234af2389f93cd2827bd9f3840"
 
 [metadata.files]
 aiofiles = [
@@ -662,6 +670,10 @@ arrow = [
 asgiref = [
     {file = "asgiref-3.5.2-py3-none-any.whl", hash = "sha256:1d2880b792ae8757289136f1db2b7b99100ce959b2aa57fd69dab783d05afac4"},
     {file = "asgiref-3.5.2.tar.gz", hash = "sha256:4a29362a6acebe09bf1d6640db38c1dc3d9217c68e6f9f6204d72667fc19a424"},
+]
+awaits = [
+    {file = "awaits-0.0.1-py3-none-any.whl", hash = "sha256:d6526e5767416404289bce14ce056b61b9ea58722d13d25143d601d1310d5375"},
+    {file = "awaits-0.0.1.tar.gz", hash = "sha256:fa6846c140b76486a87a920ba5aa831353f16de7873750f0969e6d4d5b94f1e0"},
 ]
 binaryornot = [
     {file = "binaryornot-0.4.4-py2.py3-none-any.whl", hash = "sha256:b8b71173c917bddcd2c16070412e369c3ed7f0528926f70cac18a6c97fd563e4"},

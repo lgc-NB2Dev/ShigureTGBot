@@ -3,23 +3,22 @@ from nonebot.matcher import Matcher
 
 from ..base.cmd import on_command
 from ..base.const import MD_LINE_SEP
-from ..base.util import escape_md
 
 
 @on_command("about", "关于Bot").handle()
 async def _(matcher: Matcher, event: MessageEvent):
     await matcher.send(
-        escape_md(
+        (
             "关于Shigure\n"
             f"{MD_LINE_SEP}\n"
             "开发者：[@lgc2333](https://t.me/lgc2333)\n"
             "开源地址：[Github](https://github.com/lgc2333/ShigureTGBot)\n"
             "使用框架：[Nonebot2](https://github.com/nonebot/nonebot2)\n"
             "特别感谢：\n"
-            "  - [Wutzu](https://berthua.top/)（服务器提供）\n"
+            "  \- [Wutzu](https://berthua.top/)（服务器提供）\n"
             f"{MD_LINE_SEP}\n"
-            "[请我喝杯奶茶](https://t.me/stu2333_pd/50) | [一起聊天](https://t.me/stu2333_home)",
-            ignores="()[]",
+            "[请我喝杯奶茶](https://t.me/stu2333_pd/50) \| "
+            "[一起聊天](https://t.me/stu2333_home)\n"
         ),
         reply_to_message_id=event.message_id,
         parse_mode="MarkdownV2",

@@ -1,3 +1,4 @@
+import asyncio
 import math
 import random
 import string
@@ -11,7 +12,7 @@ from nonebot.adapters.telegram.model import (
     InlineKeyboardMarkup,
     InputMediaAudio,
 )
-from nonebot.internal.matcher import Matcher
+from nonebot.matcher import Matcher
 from nonebot.params import CommandArg
 from nonebot.typing import T_State
 
@@ -20,6 +21,8 @@ from ..base.cmd import on_command
 from ..base.const import LINE_SEP
 from ..base.util import escape_md
 
+asyncio.get_event_loop().run_until_complete(login())
+
 tmp_search = {}
 
 
@@ -27,9 +30,9 @@ def get_random_str(length: int = 6):
     return "".join(random.sample(f"{string.ascii_letters}{string.digits}", length))
 
 
-@on_command("netease", "网易云音乐点歌")
+@on_command("netease", "网易云音乐点歌").handle()
 async def _(
-    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -38,32 +41,38 @@ async def _(
             reply_to_message_id=event.message_id,
         )
 
-    msg_id = (await matcher.send("搜索中……", reply_to_message_id=event.message_id))[
-        "result"
-    ]["message_id"]
+    msg_id = (
+        await matcher.send("搜索中……", reply_to_message_id=event.message_id)
+    )["result"]["message_id"]
 
     tmp_search[salt := get_random_str()] = arg
     await edit_search_music_msg(bot, msg_id, event.chat.id, salt)
 
 
 async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
+    async def edit_message_text(text):
+        return await bot.edit_message_text(
+            text=text, message_id=msg_id, chat_id=chat_id
+        )
+
+    async def edit_message_reply_markup(markup=None):
+        return await bot.edit_message_reply_markup(
+            reply_markup=markup, message_id=msg_id, chat_id=chat_id
+        )
+
     arg = tmp_search[salt]
     try:
         ret = await search(arg, page=page)
     except:
         logger.exception("歌曲搜索失败")
-        return bot.edit_message_text(
-            text="歌曲搜索失败，请重试", message_id=msg_id, chat_id=chat_id
-        )
+        return await edit_message_text("歌曲搜索失败，请重试")
 
     if ret["code"] != 200:
-        return bot.edit_message_text(
-            text=f'未知错误({ret["code"]})', message_id=msg_id, chat_id=chat_id
-        )
+        return await edit_message_text(f'未知错误({ret["code"]})')
 
     ret = ret["result"]
-    if not ret["result"]["songs"]:
-        return bot.edit_message_text(text="未搜索到歌曲", message_id=msg_id, chat_id=chat_id)
+    if not ret["songs"]:
+        return await edit_message_text("未搜索到歌曲")
 
     inline_buttons = []
     tmp_row = []
@@ -113,11 +122,9 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
         f"第 *{page}* / *{max_page}* 页"
     )
 
-    await bot.edit_message_text(text=msg, message_id=msg_id, chat_id=chat_id)
-    await bot.edit_message_reply_markup(
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_buttons),
-        message_id=msg_id,
-        chat_id=chat_id,
+    await edit_message_text(msg)
+    await edit_message_reply_markup(
+        InlineKeyboardMarkup(inline_keyboard=inline_buttons)
     )
 
 
@@ -225,7 +232,7 @@ def inline_rule(event: CallbackQueryEvent, state: T_State):
         return True
 
 
-@on("", rule=inline_rule)
+@on("", rule=inline_rule).handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
     async def process():
         data = state["data"]
