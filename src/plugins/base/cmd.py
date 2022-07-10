@@ -8,6 +8,8 @@ from nonebot.adapters.telegram.event import MessageEvent
 from nonebot.adapters.telegram.model import BotCommand
 from nonebot.matcher import Matcher
 
+from ..base.const import MD_LINE_SEP
+
 command_list = []
 
 
@@ -33,6 +35,6 @@ async def _(bot: Bot):
 @on_command("menu", "功能列表").handle()
 async def _(matcher: Matcher, event: MessageEvent):
     await matcher.send(
-        "Shigure☆功能列表\n" "-=-=-=-=-=-=-=-=-=-\n" f"{get_cmd_list_txt()}",
+        "Shigure☆功能列表\n" f"{MD_LINE_SEP}\n" f"{get_cmd_list_txt()}",
         reply_to_message_id=event.message_id,
     )

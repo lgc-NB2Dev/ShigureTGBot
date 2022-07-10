@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import nonebot
+
 from nonebot.adapters.telegram import Adapter as TELEGRAMAdapter
 
 # Custom your logger
