@@ -10,7 +10,6 @@ from nonebot.adapters.telegram.exception import NetworkError
 from nonebot.adapters.telegram.model import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
-    InputMediaAudio,
 )
 from nonebot.matcher import Matcher
 from nonebot.params import CommandArg
@@ -32,12 +31,17 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
+        logged_in = GetCurrentSession().login_info["success"]
+        login_warn = "警告！帐号未登录，功能将会受到限制\n" if not logged_in else ""
         return await matcher.finish(
-            "用法：/netease <歌曲名>\n" "可以听需要会员的歌曲（黑胶为自费）\n" "球球给点吃的吧~ → /about",
+            f'{login_warn}'
+            "用法：/netease <歌曲名>\n"
+            "可以听需要会员的歌曲（黑胶为自费）\n"
+            "球球给点吃的吧~ → /about",
             reply_to_message_id=event.message_id,
         )
 
@@ -50,9 +54,9 @@ async def _(
 
 
 async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
-    async def edit_message_text(text):
+    async def edit_message_text(text, **kwargs):
         return await bot.edit_message_text(
-            text=text, message_id=msg_id, chat_id=chat_id
+            text=text, message_id=msg_id, chat_id=chat_id, **kwargs
         )
 
     async def edit_message_reply_markup(markup=None):
@@ -78,15 +82,15 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     tmp_row = []
     music_li = []
     row_width = 5
-    limit = len(ret["songs"])
+    limit = config.netease_list_limit
     max_page = math.ceil(ret["songCount"] / limit)
 
     for i, song in enumerate(ret["songs"]):
         alia = f'_（{"、".join(song["alia"])}）_' if song["alia"] else ""  # 斜体
         ars = "、".join([x["name"] for x in song["ar"]])
 
-        num = (limit * (page - 1)) + 1
-        music_li.append(f'{num}. *{song["name"]}*{alia} - {ars}')  # 曲名粗体
+        num = (limit * (page - 1)) + i + 1
+        music_li.append(f'{num}\\. *{song["name"]}*{alia} \\- {ars}')  # 曲名粗体
         tmp_row.append(
             InlineKeyboardButton(
                 text=str(num), callback_data=f'netease|music|get|{song["id"]}'
@@ -122,16 +126,16 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
         f"第 *{page}* / *{max_page}* 页"
     )
 
-    await edit_message_text(msg)
+    await edit_message_text(msg, parse_mode="MarkdownV2")
     await edit_message_reply_markup(
         InlineKeyboardMarkup(inline_keyboard=inline_buttons)
     )
 
 
 async def get_music(bot: Bot, music_id, msg_id, chat_id):
-    async def edit_message_text(text):
+    async def edit_message_text(text, **kwargs):
         return await bot.edit_message_text(
-            text=text, message_id=msg_id, chat_id=chat_id
+            text=text, message_id=msg_id, chat_id=chat_id, **kwargs
         )
 
     async def edit_message_reply_markup(markup=None):
@@ -139,11 +143,12 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
             reply_markup=markup, message_id=msg_id, chat_id=chat_id
         )
 
-    # 获取歌曲信息
-    await edit_message_reply_markup()
+    await edit_message_reply_markup(InlineKeyboardMarkup(inline_keyboard=[]))
 
+    # 获取歌曲信息
+    await edit_message_text("获取歌曲详细信息中……")
     try:
-        ret_info = await get_track_info([int(music_id)])
+        ret_info = await get_track_info([music_id])
     except:
         logger.exception("获取歌曲详细信息失败")
         return await edit_message_text("获取歌曲详细信息失败，请重试")
@@ -154,7 +159,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     if not ret_info["songs"]:
         return await edit_message_text("未找到歌曲")
     info_song = ret_info["songs"][0]
-    info_privilege = ret_info["privileges"]["0"]
+    info_privilege = ret_info["privileges"][0]
 
     # 获取歌曲下载链接
     await edit_message_text("获取歌曲下载链接中……")
@@ -175,10 +180,10 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     info_down = ret_down[0]
 
     # 处理
-    msg = [
+    msg = '\n'.join([
         f'《*{escape_md(info_song["name"])}*》',
         "\n".join([f"_{escape_md(x)}_" for x in info_song["alia"]]),
-    ]
+    ])
     buttons = []
     for ar in info_song["ar"]:
         buttons.append(
@@ -188,14 +193,14 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
                 )
             ]
         )
-    for al in info_song["al"]:
-        buttons.append(
-            [
-                InlineKeyboardButton(
-                    text=f'专辑：{al["name"]}', callback_data=f'netease|al|{al["id"]}|1'
-                )
-            ]
-        )
+    al = info_song["al"]
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text=f'专辑：{al["name"]}', callback_data=f'netease|al|{al["id"]}|1'
+            )
+        ]
+    )
     buttons.append(
         [
             InlineKeyboardButton(
@@ -210,19 +215,26 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     if info_down["size"] > 20 * 1024 * 1024:  # 大于20M
         msg += f'\n文件超过20MB，无法上传，请点击[这里]({info_down["url"]})收听'
     else:
+        markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         try:
-            await bot.edit_message_media(
-                media=InputMediaAudio(
-                    thumb=info_song["al"]["picUrl"], media=info_down["url"]
-                ),
-                message_id=msg_id,
+            await edit_message_text('上传文件中……')
+
+            await bot.send_audio(
+                thumb=info_song["al"]["picUrl"],
+                audio=info_down["url"],
                 chat_id=chat_id,
+                reply_markup=markup,
+                title=info_song["name"],
+                caption=msg,
+                parse_mode="MarkdownV2",
+                performer='、'.join([x['name'] for x in info_song["ar"]])
             )
+            await bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except NetworkError as e:
             logger.opt(exception=e).exception("文件上传失败")
             msg += f'\n文件上传失败，请点击[这里]({info_down["url"]})收听'
-    await edit_message_text(msg)
-    await edit_message_reply_markup(InlineKeyboardMarkup(inline_keyboard=buttons))
+            await edit_message_text(msg, parse_mode="MarkdownV2")
+            await edit_message_reply_markup(markup)
 
 
 def inline_rule(event: CallbackQueryEvent, state: T_State):
@@ -246,17 +258,19 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
                             event.message.message_id,
                             event.message.chat.id,
                             data[3],
-                            data[4],
+                            int(data[4]),
                         )
+                        return 1
                     case "get":
                         await get_music(
                             bot,
-                            data[3],
+                            int(data[3]),
                             event.message.message_id,
                             event.message.chat.id,
                         )
+                        return 1
 
-    callback_txt = ""
-    if not process():
-        callback_txt = "待更新"
-    await bot.answer_callback_query(callback_query_id=event.id, text=callback_txt)
+    if not (await process()):
+        await bot.answer_callback_query(callback_query_id=event.id, text='待更新')
+    else:
+        await bot.answer_callback_query(callback_query_id=event.id)

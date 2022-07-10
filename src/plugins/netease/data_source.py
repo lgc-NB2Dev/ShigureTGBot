@@ -6,29 +6,28 @@ from pyncm.apis.login import LoginViaCellphone
 from pyncm.apis.track import GetTrackDetail, GetTrackAudio
 
 from .async_wrapper import wrapper
+from .config import config
 
 driver = get_driver()
 GetCurrentSession().headers["X-Real-IP"] = "118.88.88.88"
 
 
 async def login():
-    phone = getattr(driver.config, "netease_phone")
-    pwd = getattr(driver.config, "netease_pwd")
-
-    if (not phone) or (not pwd):
-        raise ValueError("请在env文件配置 NETEASE_PHONE 与 NETEASE_PWD")
+    phone = config.netease_phone
+    pwd = config.netease_pwd
 
     logger.info("开始登录网易云音乐")
     try:
         ret = await wrapper(LoginViaCellphone, phone=phone, password=pwd)
         nick = ret["content"]["profile"]["nickname"]
     except LoginFailedException as e:
-        logger.error("登录失败")
-        raise e
+        logger.opt(exception=e).exception("登录失败，功能将会受到限制")
+        # raise e
+        return
     logger.info(f"欢迎您，{nick}")
 
 
-async def search(name, limit=9, page=1, stype=SONG):
+async def search(name, limit=config.netease_list_limit, page=1, stype=SONG):
     offset = limit * (page - 1)
     return await wrapper(GetSearchResult, name, stype=stype, limit=limit, offset=offset)
 
