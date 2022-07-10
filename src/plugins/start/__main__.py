@@ -1,6 +1,5 @@
 from nonebot.adapters.telegram.event import MessageEvent
 from nonebot.matcher import Matcher
-from nonebot.rule import to_me
 
 from ..base.cmd import on_command
 
