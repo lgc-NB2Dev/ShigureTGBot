@@ -31,14 +31,14 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
         logged_in = GetCurrentSession().login_info["success"]
         login_warn = "警告！帐号未登录，功能将会受到限制\n" if not logged_in else ""
         return await matcher.finish(
-            f'{login_warn}'
+            f"{login_warn}"
             "用法：/netease <歌曲名>\n"
             "可以听需要会员的歌曲（黑胶为自费）\n"
             "球球给点吃的吧~ → /about",
@@ -180,10 +180,12 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     info_down = ret_down[0]
 
     # 处理
-    msg = '\n'.join([
-        f'《*{escape_md(info_song["name"])}*》',
-        "\n".join([f"_{escape_md(x)}_" for x in info_song["alia"]]),
-    ])
+    msg = "\n".join(
+        [
+            f'《*{escape_md(info_song["name"])}*》',
+            "\n".join([f"_{escape_md(x)}_" for x in info_song["alia"]]),
+        ]
+    )
     buttons = []
     for ar in info_song["ar"]:
         buttons.append(
@@ -217,7 +219,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     else:
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         try:
-            await edit_message_text('上传文件中……')
+            await edit_message_text("上传文件中……")
 
             await bot.send_audio(
                 thumb=info_song["al"]["picUrl"],
@@ -227,7 +229,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
                 title=info_song["name"],
                 caption=msg,
                 parse_mode="MarkdownV2",
-                performer='、'.join([x['name'] for x in info_song["ar"]])
+                performer="、".join([x["name"] for x in info_song["ar"]]),
             )
             await bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except NetworkError as e:
@@ -271,6 +273,6 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
                         return 1
 
     if not (await process()):
-        await bot.answer_callback_query(callback_query_id=event.id, text='待更新')
+        await bot.answer_callback_query(callback_query_id=event.id, text="待更新")
     else:
         await bot.answer_callback_query(callback_query_id=event.id)
