@@ -20,27 +20,31 @@ command_list = []
 bot_username = []
 
 
-async def command_rule(event: MessageEvent, state: T_State, arg: Message = CommandArg(),
-                       cmd: str = RawCommand()):
+async def command_rule(
+    event: MessageEvent,
+    state: T_State,
+    arg: Message = CommandArg(),
+    cmd: str = RawCommand(),
+):
     def simple_check(msg_, cmd_):
-        return msg_ == cmd_ or msg_.startswith(f'{cmd_} ')
+        return msg_ == cmd_ or msg_.startswith(f"{cmd_} ")
 
     msg = event.message.extract_plain_text().strip()
     if simple_check(msg, cmd):
         return True
     if isinstance(event, GroupMessageEvent):
         for u in bot_username:
-            group_cmd = f'{cmd}@{u}'
+            group_cmd = f"{cmd}@{u}"
             if simple_check(msg, group_cmd):
                 arg_copy = arg.copy()
                 for i, m in enumerate(arg):
-                    if m.data['text'] == f'@{u}':
+                    if m.data["text"] == f"@{u}":
                         arg_copy.pop(i)
 
                         arg_len = len(arg_copy)
                         if arg_len > 0:
-                            t = arg_copy[i].data['text']
-                            arg_copy[i].data['text'] = t.lstrip()
+                            t = arg_copy[i].data["text"]
+                            arg_copy[i].data["text"] = t.lstrip()
                 state[PREFIX_KEY][CMD_TRUE_ARG_KEY] = arg_copy
                 return True
 
@@ -48,9 +52,9 @@ async def command_rule(event: MessageEvent, state: T_State, arg: Message = Comma
 def on_command(cmd: str | tuple, desc: str, *args, **kwargs):
     command_list.append(BotCommand(command=cmd, description=desc))
 
-    if rule := kwargs.get('rule'):
+    if rule := kwargs.get("rule"):
         rule = rule & command_rule
-        kwargs.pop('rule')
+        kwargs.pop("rule")
     else:
         rule = command_rule
     return raw_on_command(cmd, rule=rule, *args, **kwargs)
@@ -76,7 +80,7 @@ def get_cmd_list_txt():
 async def _(bot: Bot):
     command_list.sort(key=lambda x: x.command)
 
-    bot_username.append(u := ((await bot.get_me())['result']['username']))
+    bot_username.append(u := ((await bot.get_me())["result"]["username"]))
     logger.info(f"Bot {bot.self_id}(@{u}) connected")
 
     logger.info(f"Registered Commands:\n{get_cmd_list_txt()}")

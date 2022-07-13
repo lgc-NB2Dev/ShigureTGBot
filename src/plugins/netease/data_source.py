@@ -20,7 +20,7 @@ async def login():
                 LoginViaCellphone,
                 phone=config.netease_phone,
                 password=config.netease_pwd,
-                ctcode=config.netease_ct_code
+                ctcode=config.netease_ct_code,
             )
             nick = ret["content"]["profile"]["nickname"]
         except LoginFailedException as e:
@@ -33,13 +33,13 @@ async def login():
 async def search(name, limit=config.netease_list_limit, page=1, stype=SONG):
     offset = limit * (page - 1)
     res = await wrapper(GetSearchResult, name, stype=stype, limit=limit, offset=offset)
-    logger.debug(f'GetSearchResult - {res}')
+    logger.debug(f"GetSearchResult - {res}")
     return res
 
 
 async def get_track_info(ids: list):
     res = await wrapper(GetTrackDetail, ids)
-    logger.debug(f'GetTrackDetail - {res}')
+    logger.debug(f"GetTrackDetail - {res}")
     return res
 
 
@@ -47,5 +47,5 @@ async def get_track_audio(song_ids: list, bit_rate=320000, encode_type="aac"):
     res = await wrapper(
         GetTrackAudio, song_ids, bitrate=bit_rate, encodeType=encode_type
     )
-    logger.debug(f'GetTrackAudio - {res}')
+    logger.debug(f"GetTrackAudio - {res}")
     return res

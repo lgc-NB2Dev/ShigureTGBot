@@ -30,7 +30,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -74,7 +74,7 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
         return await edit_message_text(f'未知错误({ret["code"]})')
 
     ret = ret["result"]
-    if not ret.get('songs'):
+    if not ret.get("songs"):
         return await edit_message_text("未搜索到歌曲")
 
     inline_buttons = []
@@ -225,7 +225,9 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
         try:
             await edit_message_text("上传文件中……")
 
-            msg += "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
+            msg += (
+                "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
+            )
             await bot.send_audio(
                 thumb=info_song["al"]["picUrl"],
                 audio=info_down["url"],
@@ -235,7 +237,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
                 caption=msg,
                 parse_mode="HTML",
                 performer="、".join([x["name"] for x in info_song["ar"]]),
-                reply_to_message_id=reply_to_id
+                reply_to_message_id=reply_to_id,
             )
             await bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except NetworkError as e:
@@ -273,7 +275,7 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
                             int(data[3]),
                             event.message.message_id,
                             event.message.chat.id,
-                            event.message.reply_to_message.message_id
+                            event.message.reply_to_message.message_id,
                         )
                         return 1
 
