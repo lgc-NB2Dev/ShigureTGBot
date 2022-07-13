@@ -1,4 +1,4 @@
-from nonebot import logger, get_driver
+from nonebot import logger
 from pyncm import GetCurrentSession
 from pyncm.apis import LoginFailedException
 from pyncm.apis.cloudsearch import GetSearchResult, SONG
@@ -8,35 +8,44 @@ from pyncm.apis.track import GetTrackDetail, GetTrackAudio
 from .async_wrapper import wrapper
 from .config import config
 
-driver = get_driver()
-GetCurrentSession().headers["X-Real-IP"] = "118.88.88.88"
+if config.netease_fake_ip:
+    GetCurrentSession().headers["X-Real-IP"] = config.netease_fake_ip
 
 
 async def login():
-    phone = config.netease_phone
-    pwd = config.netease_pwd
-
-    logger.info("开始登录网易云音乐")
-    try:
-        ret = await wrapper(LoginViaCellphone, phone=phone, password=pwd)
-        nick = ret["content"]["profile"]["nickname"]
-    except LoginFailedException as e:
-        logger.opt(exception=e).exception("登录失败，功能将会受到限制")
-        # raise e
-        return
-    logger.info(f"欢迎您，{nick}")
+    if config.netease_login:
+        logger.info("开始登录网易云音乐")
+        try:
+            ret = await wrapper(
+                LoginViaCellphone,
+                phone=config.netease_phone,
+                password=config.netease_pwd,
+                ctcode=config.netease_ct_code
+            )
+            nick = ret["content"]["profile"]["nickname"]
+        except LoginFailedException as e:
+            logger.opt(exception=e).exception("登录失败，功能将会受到限制")
+            # raise e
+            return
+        logger.info(f"欢迎您，{nick}")
 
 
 async def search(name, limit=config.netease_list_limit, page=1, stype=SONG):
     offset = limit * (page - 1)
-    return await wrapper(GetSearchResult, name, stype=stype, limit=limit, offset=offset)
+    res = await wrapper(GetSearchResult, name, stype=stype, limit=limit, offset=offset)
+    logger.debug(f'GetSearchResult - {res}')
+    return res
 
 
 async def get_track_info(ids: list):
-    return await wrapper(GetTrackDetail, ids)
+    res = await wrapper(GetTrackDetail, ids)
+    logger.debug(f'GetTrackDetail - {res}')
+    return res
 
 
 async def get_track_audio(song_ids: list, bit_rate=320000, encode_type="aac"):
-    return await wrapper(
+    res = await wrapper(
         GetTrackAudio, song_ids, bitrate=bit_rate, encodeType=encode_type
     )
+    logger.debug(f'GetTrackAudio - {res}')
+    return res

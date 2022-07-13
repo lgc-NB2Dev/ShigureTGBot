@@ -13,11 +13,10 @@ from nonebot.adapters.telegram.model import (
     InlineKeyboardMarkup,
 )
 from nonebot.matcher import Matcher
-from nonebot.params import CommandArg
 from nonebot.typing import T_State
 
 from .data_source import *
-from ..base.cmd import on_command
+from ..base.cmd import on_command, CommandArg
 from ..base.const import LINE_SEP
 
 asyncio.get_event_loop().run_until_complete(login())
@@ -31,7 +30,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -75,7 +74,7 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
         return await edit_message_text(f'未知错误({ret["code"]})')
 
     ret = ret["result"]
-    if not ret["songs"]:
+    if not ret.get('songs'):
         return await edit_message_text("未搜索到歌曲")
 
     inline_buttons = []
@@ -131,7 +130,7 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     )
 
 
-async def get_music(bot: Bot, music_id, msg_id, chat_id):
+async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
     async def edit_message_text(text, **kwargs):
         return await bot.edit_message_text(
             text=text, message_id=msg_id, chat_id=chat_id, **kwargs
@@ -179,16 +178,17 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     info_down = ret_down[0]
 
     # 处理
-    msg = "\n".join(
-        [
-            f'《<b>{escape(info_song["name"])}</b>》',
-            "\n".join([f"<i>{escape(x)}</i>" for x in info_song["alia"]]),
-            "\n",
-            ("<i>注：由于nonebot-adapter-telegram的一个问题，" "下面的按钮点击是没反应的，等bug修了再接着做</i>"),
-            "\n",
-            "via @shiguretgbot",
-        ]
-    )
+    too_large = info_down["size"] > 20 * 1024 * 1024
+
+    msg = list()
+    msg.append(f'《<b>{escape(info_song["name"])}</b>》')
+    if alia := info_song["alia"]:
+        msg.append("\n".join([f"<i>{escape(x)}</i>" for x in alia]))
+    if too_large:
+        msg.append(f'\n文件超过20MB，无法上传，请点击<a href="{info_down["url"]}">这里</a>收听')
+    msg.append("\nvia @shiguretgbot")
+    msg = "\n".join(msg)
+
     buttons = []
     for ar in info_song["ar"]:
         buttons.append(
@@ -217,13 +217,15 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
         ]
     )
 
-    if info_down["size"] > 20 * 1024 * 1024:  # 大于20M
-        msg += f'\n文件超过20MB，无法上传，请点击<a href="{info_down["url"]}">这里</a>收听'
+    markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+    if too_large:
+        await edit_message_text(msg, parse_mode="HTML")
+        await edit_message_reply_markup(markup)
     else:
-        markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         try:
             await edit_message_text("上传文件中……")
 
+            msg += "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
             await bot.send_audio(
                 thumb=info_song["al"]["picUrl"],
                 audio=info_down["url"],
@@ -233,13 +235,12 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
                 caption=msg,
                 parse_mode="HTML",
                 performer="、".join([x["name"] for x in info_song["ar"]]),
+                reply_to_message_id=reply_to_id
             )
             await bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except NetworkError as e:
             logger.opt(exception=e).exception("文件上传失败")
             msg += f'\n文件上传失败，请点击<a href="{info_down["url"]}">这里</a>收听'
-            await edit_message_text(msg, parse_mode="HTML")
-            await edit_message_reply_markup(markup)
 
 
 def inline_rule(event: CallbackQueryEvent, state: T_State):
@@ -272,6 +273,7 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
                             int(data[3]),
                             event.message.message_id,
                             event.message.chat.id,
+                            event.message.reply_to_message.message_id
                         )
                         return 1
 
