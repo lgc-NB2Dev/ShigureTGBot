@@ -2,6 +2,7 @@ import asyncio
 import math
 import random
 import string
+from html import escape
 
 from nonebot import on
 from nonebot.adapters.telegram import Message, Bot
@@ -18,7 +19,6 @@ from nonebot.typing import T_State
 from .data_source import *
 from ..base.cmd import on_command
 from ..base.const import LINE_SEP
-from ..base.util import escape_md
 
 asyncio.get_event_loop().run_until_complete(login())
 
@@ -31,7 +31,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -86,11 +86,11 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     max_page = math.ceil(ret["songCount"] / limit)
 
     for i, song in enumerate(ret["songs"]):
-        alia = f'_（{"、".join(song["alia"])}）_' if song["alia"] else ""  # 斜体
-        ars = "、".join([x["name"] for x in song["ar"]])
+        alia = f'<i>（{escape("、".join(song["alia"]))}）</i>' if song["alia"] else ""
+        ars = "、".join([escape(x["name"]) for x in song["ar"]])
 
         num = (limit * (page - 1)) + i + 1
-        music_li.append(f'{num}\\. *{song["name"]}*{alia} \\- {ars}')  # 曲名粗体
+        music_li.append(f'{num}. <b>{song["name"]}</b>{alia} - {ars}')
         tmp_row.append(
             InlineKeyboardButton(
                 text=str(num), callback_data=f'netease|music|get|{song["id"]}'
@@ -117,16 +117,15 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     tmp_row.clear()
 
     music_li = "\n".join(music_li)
-    sep = escape_md(LINE_SEP)
     msg = (
-        f"【*{arg}*】的搜索结果：\n"  # 粗体
-        f"{sep}\n"
+        f"【<b>{arg}</b>】的搜索结果：\n"
+        f"{LINE_SEP}\n"
         f"{music_li}\n"
-        f"{sep}\n"
-        f"第 *{page}* / *{max_page}* 页"
+        f"{LINE_SEP}\n"
+        f"第 <b>{page}</b> / <b>{max_page}</b> 页"
     )
 
-    await edit_message_text(msg, parse_mode="MarkdownV2")
+    await edit_message_text(msg, parse_mode="HTML")
     await edit_message_reply_markup(
         InlineKeyboardMarkup(inline_keyboard=inline_buttons)
     )
@@ -138,9 +137,9 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
             text=text, message_id=msg_id, chat_id=chat_id, **kwargs
         )
 
-    async def edit_message_reply_markup(markup=None):
+    async def edit_message_reply_markup(markup_=None):
         return await bot.edit_message_reply_markup(
-            reply_markup=markup, message_id=msg_id, chat_id=chat_id
+            reply_markup=markup_, message_id=msg_id, chat_id=chat_id
         )
 
     await edit_message_reply_markup(InlineKeyboardMarkup(inline_keyboard=[]))
@@ -182,8 +181,13 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     # 处理
     msg = "\n".join(
         [
-            f'《*{escape_md(info_song["name"])}*》',
-            "\n".join([f"_{escape_md(x)}_" for x in info_song["alia"]]),
+            f'《<b>{escape(info_song["name"])}</b>》',
+            "\n".join([f"<i>{escape(x)}</i>" for x in info_song["alia"]]),
+            '\n',
+            ('<i>注：由于nonebot-adapter-telegram的一个问题，'
+             '下面的按钮点击是没反应的，等bug修了再接着做</i>'),
+            '\n',
+            'via @shiguretgbot'
         ]
     )
     buttons = []
@@ -215,7 +219,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
     )
 
     if info_down["size"] > 20 * 1024 * 1024:  # 大于20M
-        msg += f'\n文件超过20MB，无法上传，请点击[这里]({info_down["url"]})收听'
+        msg += f'\n文件超过20MB，无法上传，请点击<a href="{info_down["url"]}">这里</a>收听'
     else:
         markup = InlineKeyboardMarkup(inline_keyboard=buttons)
         try:
@@ -228,14 +232,14 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
                 reply_markup=markup,
                 title=info_song["name"],
                 caption=msg,
-                parse_mode="MarkdownV2",
+                parse_mode="HTML",
                 performer="、".join([x["name"] for x in info_song["ar"]]),
             )
             await bot.delete_message(chat_id=chat_id, message_id=msg_id)
         except NetworkError as e:
             logger.opt(exception=e).exception("文件上传失败")
-            msg += f'\n文件上传失败，请点击[这里]({info_down["url"]})收听'
-            await edit_message_text(msg, parse_mode="MarkdownV2")
+            msg += f'\n文件上传失败，请点击<a href="{info_down["url"]}">这里</a>收听'
+            await edit_message_text(msg, parse_mode="HTML")
             await edit_message_reply_markup(markup)
 
 

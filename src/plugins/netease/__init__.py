@@ -7,4 +7,4 @@ NETEASE_PWD 登录密码
 """
 from .__main__ import *
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ShigureTGBot"
-version = "0.1.3"
+version = "0.1.4"
 description = "ShigureTGBot"
 authors = ["student_2333 <lgc2333@126.com>"]
 readme = "README.md"
@@ -11,6 +11,8 @@ nonebot2 = {extras = ["httpx"], version = "^2.0.0-beta.4"}
 nonebot-adapter-telegram = ">=0.1.0b2"
 pyncm = ">=1.6.6"
 awaits = "^0.0.1"
+aiohttp = "^3.8.1"
+pathlib = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 nb-cli = ">=0.6.0"
