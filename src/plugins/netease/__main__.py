@@ -31,7 +31,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -183,11 +183,10 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id):
         [
             f'《<b>{escape(info_song["name"])}</b>》',
             "\n".join([f"<i>{escape(x)}</i>" for x in info_song["alia"]]),
-            '\n',
-            ('<i>注：由于nonebot-adapter-telegram的一个问题，'
-             '下面的按钮点击是没反应的，等bug修了再接着做</i>'),
-            '\n',
-            'via @shiguretgbot'
+            "\n",
+            ("<i>注：由于nonebot-adapter-telegram的一个问题，" "下面的按钮点击是没反应的，等bug修了再接着做</i>"),
+            "\n",
+            "via @shiguretgbot",
         ]
     )
     buttons = []
