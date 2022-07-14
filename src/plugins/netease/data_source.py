@@ -27,6 +27,7 @@ async def login():
             logger.opt(exception=e).exception("登录失败，功能将会受到限制")
             return e
         logger.info(f"欢迎您，{nick}")
+    return ValueError('配置文件中 netease_login 不为真')
 
 
 async def search(name, limit=config.netease_list_limit, page=1, stype=SONG):
