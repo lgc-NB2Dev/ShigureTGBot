@@ -31,7 +31,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -293,6 +293,7 @@ async def _(matcher: Matcher, bot: Bot, event: MessageEvent):
     ]["message_id"]
     ret = await login()
     if isinstance(ret, Exception):
-        return await bot.edit_message_text(chat_id=event.chat.id, message_id=msg_id,
-                                           text=f"登录失败\n{ret!r}")
+        return await bot.edit_message_text(
+            chat_id=event.chat.id, message_id=msg_id, text=f"登录失败\n{ret!r}"
+        )
     await bot.edit_message_text(chat_id=event.chat.id, message_id=msg_id, text=f"登录成功")

@@ -1,7 +1,10 @@
 from nonebot import on_message, logger
 from nonebot.adapters.telegram import Bot
-from nonebot.adapters.telegram.event import MessageEvent, GroupMessageEvent, \
-    PrivateMessageEvent
+from nonebot.adapters.telegram.event import (
+    MessageEvent,
+    GroupMessageEvent,
+    PrivateMessageEvent,
+)
 from pixivpy_async.aapi import AppPixivAPI
 
 from .config import config
