@@ -31,7 +31,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -45,11 +45,9 @@ async def _(
             reply_to_message_id=event.message_id,
         )
 
-    msg_id = (
-        await matcher.send(
-            "搜索中……", reply_to_message_id=event.message_id
-        )
-    )["result"]["message_id"]
+    msg_id = (await matcher.send("搜索中……", reply_to_message_id=event.message_id))[
+        "result"
+    ]["message_id"]
 
     tmp_search[salt := get_random_str()] = arg
     await edit_search_music_msg(bot, msg_id, event.chat.id, salt)
@@ -288,14 +286,12 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
         await bot.answer_callback_query(callback_query_id=event.id)
 
 
-@on_command('netease_relogin', '网易云重登', hide=True, permission=SUPERUSER).handle()
+@on_command("netease_relogin", "网易云重登", hide=True, permission=SUPERUSER).handle()
 async def _(matcher: Matcher, bot: Bot, event: MessageEvent):
-    msg_id = (
-        await matcher.send(
-            "重新登录中……", reply_to_message_id=event.message_id
-        )
-    )["result"]["message_id"]
+    msg_id = (await matcher.send("重新登录中……", reply_to_message_id=event.message_id))[
+        "result"
+    ]["message_id"]
     ret = await login()
     if isinstance(ret, Exception):
-        return await bot.edit_message_text(message_id=msg_id, text=f'登录失败\n{ret!r}')
-    await bot.edit_message_text(message_id=msg_id, text=f'登录成功')
+        return await bot.edit_message_text(message_id=msg_id, text=f"登录失败\n{ret!r}")
+    await bot.edit_message_text(message_id=msg_id, text=f"登录成功")

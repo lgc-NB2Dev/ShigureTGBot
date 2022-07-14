@@ -27,10 +27,10 @@ class BotCommand(RawBotCommand):
 
 
 async def command_rule(
-        event: MessageEvent,
-        state: T_State,
-        arg: Message = CommandArg(),
-        cmd: str = RawCommand(),
+    event: MessageEvent,
+    state: T_State,
+    arg: Message = CommandArg(),
+    cmd: str = RawCommand(),
 ):
     def simple_check(msg_, cmd_):
         return msg_ == cmd_ or msg_.startswith(f"{cmd_} ")
@@ -80,8 +80,11 @@ def CommandArg():
 def get_cmd_list_txt(show_hide=False):
     prefix = list(driver.config.command_start)[0]
     return "\n".join(
-        [f"{prefix}{x.command} - {x.description}{'（隐藏）' if x.hide else ''}"
-         for x in command_list if (not x.hide) or show_hide]
+        [
+            f"{prefix}{x.command} - {x.description}{'（隐藏）' if x.hide else ''}"
+            for x in command_list
+            if (not x.hide) or show_hide
+        ]
     )
 
 

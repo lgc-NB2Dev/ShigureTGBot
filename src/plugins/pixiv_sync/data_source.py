@@ -28,8 +28,9 @@ class PixivAPI(AppPixivAPI):
 
         def s256(data_):
             """S256 transformation method."""
-            return urlsafe_b64encode(sha256(data_).digest()).rstrip(b"=").decode(
-                "ascii")
+            return (
+                urlsafe_b64encode(sha256(data_).digest()).rstrip(b"=").decode("ascii")
+            )
 
         """Proof Key for Code Exchange by OAuth Public Clients (RFC7636)."""
         code_verifier = token_urlsafe(32)
@@ -43,12 +44,12 @@ class PixivAPI(AppPixivAPI):
         await bot.send_message(
             chat_id=config.pixiv_oauth_user,
             text=(
-                '[PixivSync]\n'
+                "[PixivSync]\n"
                 f'<a href="{LOGIN_URL}?{urlencode(login_params)}">登录链接</a>\n'
-                '请直接将Auth Token发给我\n'
+                "请直接将Auth Token发给我\n"
                 f'<a href="https://gist.github.com/ZipFile/c9ebedb224406f4f11845ab700124362">教程</a>'
             ),
-            parse_mode='HTML'
+            parse_mode="HTML",
         )
 
         async def rule(event: MessageEvent):
@@ -69,9 +70,7 @@ class PixivAPI(AppPixivAPI):
             "include_policy": "true",
             "redirect_uri": REDIRECT_URI,
         }
-        headers = {
-            'User-Agent': self.user_agent
-        }
+        headers = {"User-Agent": self.user_agent}
 
         # return auth/token response
         return await self.auth_req(self.api.auth, headers, data)
@@ -82,15 +81,17 @@ async def login(bot: Bot):
         try:
             ret = await api.login_web_with_bot(bot)
         except Exception as e:
-            logger.opt(exception=e).exception('Pixiv登录失败')
-            return await bot.send_message(chat_id=config.pixiv_oauth_user,
-                                          text=f'登录失败\n{e!r}')
+            logger.opt(exception=e).exception("Pixiv登录失败")
+            return await bot.send_message(
+                chat_id=config.pixiv_oauth_user, text=f"登录失败\n{e!r}"
+            )
         user_name = ret["user"]["name"]
-        await bot.send_message(chat_id=config.pixiv_oauth_user,
-                               text=f'登录成功，欢迎你，{user_name}')
+        await bot.send_message(
+            chat_id=config.pixiv_oauth_user, text=f"登录成功，欢迎你，{user_name}"
+        )
         api.user_name = user_name
     else:
-        logger.info('Pixiv未登录')
+        logger.info("Pixiv未登录")
 
 
 api = PixivAPI(proxy=global_config.telegram_proxy)
