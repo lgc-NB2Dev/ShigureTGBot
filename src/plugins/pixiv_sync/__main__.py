@@ -85,7 +85,7 @@ async def _():
                 async with ClientSession() as s:
                     async with s.get(
                         i["image_urls"]["medium"],  # tg会压缩图片，还不如发压缩图
-                        proxy=global_config.telegram_proxy,
+                        proxy=config.telegram_proxy,
                         headers={
                             "Referer": "https://www.pixiv.net/",
                             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",

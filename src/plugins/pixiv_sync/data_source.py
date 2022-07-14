@@ -94,4 +94,4 @@ async def login(bot: Bot):
         logger.info("Pixiv未登录")
 
 
-api = PixivAPI(proxy=global_config.telegram_proxy)
+api = PixivAPI(proxy=config.telegram_proxy)

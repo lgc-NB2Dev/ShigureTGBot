@@ -12,6 +12,8 @@ class Config(BaseSettings):
     pixiv_sync_to_chats: list[int] = None
     pixiv_sync_delay: int = 300
 
+    telegram_proxy: Optional[str] = None
+
     class Config:
         extra = "ignore"
 
