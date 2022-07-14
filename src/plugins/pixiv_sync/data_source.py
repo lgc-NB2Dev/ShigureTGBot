@@ -1,21 +1,44 @@
-import asyncio
-
 from nonebot import on_message, logger
 from nonebot.adapters.telegram import Bot
-from nonebot.adapters.telegram.event import MessageEvent
+from nonebot.adapters.telegram.event import (
+    MessageEvent,
+    GroupMessageEvent,
+    PrivateMessageEvent,
+)
 from pixivpy_async.aapi import AppPixivAPI
 
-from .config import config, global_config
+from .config import config
 
 
 class PixivAPI(AppPixivAPI):
     def __init__(self, **requests_kwargs):
         super().__init__(**requests_kwargs)
-        self.login_code = None
         self.user_name = None
 
-    async def set_login_code(self, event: MessageEvent):
-        self.login_code = event.get_plaintext()
+        self.login_code_verifier = None
+
+    async def login_web_with_bot_2(self, bot: Bot, event: MessageEvent):
+        REDIRECT_URI = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback"
+        code = event.get_plaintext()
+
+        data = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "code": code,
+            "code_verifier": self.login_code_verifier,
+            "grant_type": "authorization_code",
+            "include_policy": "true",
+            "redirect_uri": REDIRECT_URI,
+        }
+        headers = {"User-Agent": self.user_agent}
+
+        ret = await self.auth_req(self.api.auth, headers, data)
+
+        user_name = ret["user"]["name"]
+        await bot.send_message(
+            chat_id=config.pixiv_oauth_user, text=f"登录成功，欢迎你，{user_name}"
+        )
+        self.user_name = user_name
 
     async def login_web_with_bot(self, bot):
         from base64 import urlsafe_b64encode
@@ -24,7 +47,6 @@ class PixivAPI(AppPixivAPI):
         from urllib.parse import urlencode
 
         LOGIN_URL = "https://app-api.pixiv.net/web/v1/login"
-        REDIRECT_URI = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback"
 
         def s256(data_):
             """S256 transformation method."""
@@ -52,44 +74,23 @@ class PixivAPI(AppPixivAPI):
             parse_mode="HTML",
         )
 
-        async def rule(event: MessageEvent):
+        self.login_code_verifier = code_verifier
+
+        async def rule(event: PrivateMessageEvent | GroupMessageEvent):
             return event.chat.id == config.pixiv_oauth_user
 
-        on_message(temp=True, rule=rule).append_handler(self.set_login_code)
-
-        while not self.login_code:
-            await asyncio.sleep(0)
-        code = self.login_code
-
-        data = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "code": code,
-            "code_verifier": code_verifier,
-            "grant_type": "authorization_code",
-            "include_policy": "true",
-            "redirect_uri": REDIRECT_URI,
-        }
-        headers = {"User-Agent": self.user_agent}
-
-        # return auth/token response
-        return await self.auth_req(self.api.auth, headers, data)
+        on_message(temp=True, rule=rule).append_handler(self.login_web_with_bot_2)
 
 
 async def login(bot: Bot):
     if config.pixiv_oauth_user:
         try:
-            ret = await api.login_web_with_bot(bot)
+            await api.login_web_with_bot(bot)
         except Exception as e:
             logger.opt(exception=e).exception("Pixiv登录失败")
             return await bot.send_message(
                 chat_id=config.pixiv_oauth_user, text=f"登录失败\n{e!r}"
             )
-        user_name = ret["user"]["name"]
-        await bot.send_message(
-            chat_id=config.pixiv_oauth_user, text=f"登录成功，欢迎你，{user_name}"
-        )
-        api.user_name = user_name
     else:
         logger.info("Pixiv未登录")
 
