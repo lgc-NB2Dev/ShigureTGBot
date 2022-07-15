@@ -8,9 +8,8 @@ from ..data import PluginData
 
 
 class Config(BaseSettings):
-    pixiv_oauth_user: Optional[int] = None
     pixiv_sync_to_chats: list[int] = None
-    pixiv_sync_delay: int = 300
+    pixiv_send_delay: int = 10
 
     telegram_proxy: Optional[str] = None
 

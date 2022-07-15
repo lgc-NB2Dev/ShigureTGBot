@@ -22,4 +22,5 @@ async def _(matcher: Matcher, event: MessageEvent):
         ),
         reply_to_message_id=event.message_id,
         parse_mode="MarkdownV2",
+        disable_web_page_preview=True
     )

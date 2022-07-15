@@ -1,10 +1,10 @@
-from nonebot import on_message, logger
+from base64 import urlsafe_b64encode
+from hashlib import sha256
+from secrets import token_urlsafe
+from urllib.parse import urlencode
+
+from nonebot import logger
 from nonebot.adapters.telegram import Bot
-from nonebot.adapters.telegram.event import (
-    MessageEvent,
-    GroupMessageEvent,
-    PrivateMessageEvent,
-)
 from pixivpy_async.aapi import AppPixivAPI
 
 from .config import config
@@ -17,35 +17,7 @@ class PixivAPI(AppPixivAPI):
 
         self.login_code_verifier = None
 
-    async def login_web_with_bot_2(self, bot: Bot, event: MessageEvent):
-        REDIRECT_URI = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback"
-        code = event.get_plaintext()
-
-        data = {
-            "client_id": self.client_id,
-            "client_secret": self.client_secret,
-            "code": code,
-            "code_verifier": self.login_code_verifier,
-            "grant_type": "authorization_code",
-            "include_policy": "true",
-            "redirect_uri": REDIRECT_URI,
-        }
-        headers = {"User-Agent": self.user_agent}
-
-        ret = await self.auth_req(self.api.auth, headers, data)
-
-        user_name = ret["user"]["name"]
-        await bot.send_message(
-            chat_id=config.pixiv_oauth_user, text=f"登录成功，欢迎你，{user_name}"
-        )
-        self.user_name = user_name
-
-    async def login_web_with_bot(self, bot):
-        from base64 import urlsafe_b64encode
-        from hashlib import sha256
-        from secrets import token_urlsafe
-        from urllib.parse import urlencode
-
+    async def login_web_part1(self):
         LOGIN_URL = "https://app-api.pixiv.net/web/v1/login"
 
         def s256(data_):
@@ -62,24 +34,29 @@ class PixivAPI(AppPixivAPI):
             "code_challenge_method": "S256",
             "client": "pixiv-android",
         }
-
-        await bot.send_message(
-            chat_id=config.pixiv_oauth_user,
-            text=(
-                "[PixivSync]\n"
-                f'<a href="{LOGIN_URL}?{urlencode(login_params)}">登录链接</a>\n'
-                "请直接将Auth Token发给我\n"
-                f'<a href="https://gist.github.com/ZipFile/c9ebedb224406f4f11845ab700124362">教程</a>'
-            ),
-            parse_mode="HTML",
-        )
-
         self.login_code_verifier = code_verifier
 
-        async def rule(event: PrivateMessageEvent | GroupMessageEvent):
-            return event.chat.id == config.pixiv_oauth_user
+        return f"{LOGIN_URL}?{urlencode(login_params)}"
 
-        on_message(temp=True, rule=rule).append_handler(self.login_web_with_bot_2)
+    async def login_web_part2(self, code):
+        REDIRECT_URI = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback"
+
+        data = {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "code": code,
+            "code_verifier": self.login_code_verifier,
+            "grant_type": "authorization_code",
+            "include_policy": "true",
+            "redirect_uri": REDIRECT_URI,
+        }
+        headers = {"User-Agent": self.user_agent}
+
+        ret = await self.auth_req(self.api.auth, headers, data)
+        self.login_code_verifier = None
+        self.user_name = ret["user"]["name"]
+
+        return ret
 
 
 async def login(bot: Bot):
@@ -93,6 +70,3 @@ async def login(bot: Bot):
             )
     else:
         logger.info("Pixiv未登录")
-
-
-api = PixivAPI(proxy=config.telegram_proxy)
