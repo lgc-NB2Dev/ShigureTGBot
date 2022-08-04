@@ -106,7 +106,7 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 ret["urls"]["original"],
-                proxy=getattr(config, "telegram_proxy"),
+                proxy=getattr(config, "telegram_proxy", None),
                 timeout=aiohttp.ClientTimeout(total=60),
                 headers={"referer": "https://www.pixiv.net/"},
             ) as response:
