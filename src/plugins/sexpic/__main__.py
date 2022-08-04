@@ -69,7 +69,7 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
 
     search_tags = []
     for t in tag:
-        search_tags.extend(t.split('|'))
+        search_tags.extend(t.split("|"))
 
     pic_tags = []
     for t in ret["tags"]:  # type:str
@@ -77,11 +77,11 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         et = escape(t)
         for tt in search_tags:
             if t.find(tt) != -1:
-                pic_tags.append(f'<b>{et}</b>')
+                pic_tags.append(f"<b>{et}</b>")
                 find = True
                 break
         if not find:
-            pic_tags.append(f'<code>{et}</code>')
+            pic_tags.append(f"<code>{et}</code>")
 
     caption = (
         f"<b>奉上{'R18' if r18 else ''}涩图一张~</b>\n"
@@ -150,13 +150,7 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
 @on("", rule=inline_rule("sexpic")).handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
     data = state["data"]
-    arg = '|'.join(data[2:-1])
+    arg = "|".join(data[2:-1])
     r18 = int(data[-1])
     await bot.answer_callback_query(callback_query_id=event.id)
-    await get_setu(
-        bot,
-        event.message.chat.id,
-        arg,
-        r18,
-        event.message.message_id
-    )
+    await get_setu(bot, event.message.chat.id, arg, r18, event.message.message_id)
