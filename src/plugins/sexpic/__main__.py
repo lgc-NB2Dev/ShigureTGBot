@@ -18,15 +18,14 @@ config = get_driver().config
 @on_command("sexpic_r18", "不够涩！！我要更涩的！！！").handle()
 @on_command("sexpic", "涩图！我要涩涩！！").handle()
 async def _(
-        bot: Bot, event: MessageEvent, arg: Message = CommandArg(),
-        cmd: str = RawCommand()
+    bot: Bot, event: MessageEvent, arg: Message = CommandArg(), cmd: str = RawCommand()
 ):
     await get_setu(
         bot,
         event.chat.id,
         arg.extract_plain_text().strip(),
-        1 if (cmd == '/sexpic_r18') else 0,
-        event.message_id
+        1 if (cmd == "/sexpic_r18") else 0,
+        event.message_id,
     )
 
 
@@ -34,82 +33,57 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
     tag = arg.split(",")
     if len(tag) > 3:
         return await bot.send_message(
-            chat_id=chat_id,
-            text="and规则的tag匹配数不能超过3个",
-            reply_to_message_id=reply_to
+            chat_id=chat_id, text="and规则的tag匹配数不能超过3个", reply_to_message_id=reply_to
         )
     for i in tag:
         if len(i.split("|")) > 20:
             return await bot.send_message(
-                chat_id=chat_id,
-                text="or规则的tag匹配数不能超过20个",
-                reply_to_message_id=reply_to
+                chat_id=chat_id, text="or规则的tag匹配数不能超过20个", reply_to_message_id=reply_to
             )
 
     msg_id = (
         await bot.send_message(
-            chat_id=chat_id,
-            text="正在取得涩图信息~",
-            reply_to_message_id=reply_to
+            chat_id=chat_id, text="正在取得涩图信息~", reply_to_message_id=reply_to
         )
     )["result"]["message_id"]
 
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                    "https://api.lolicon.app/setu/v2",
-                    json={
-                        "proxy": 0,
-                        "num": 1,
-                        "tag": tag,
-                        "r18": r18
-                    }
+                "https://api.lolicon.app/setu/v2",
+                json={"proxy": 0, "num": 1, "tag": tag, "r18": r18},
             ) as response:
                 ret = await response.json()
     except:
-        logger.exception('获取涩图URL失败')
+        logger.exception("获取涩图URL失败")
         await bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=msg_id,
-            text='啊呜……获取涩图信息失败惹……'
+            chat_id=chat_id, message_id=msg_id, text="啊呜……获取涩图信息失败惹……"
         )
 
     ret = ret["data"]
     if not ret:
         return await bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=msg_id,
-            text='没有找到符合要求的图片捏'
+            chat_id=chat_id, message_id=msg_id, text="没有找到符合要求的图片捏"
         )
     ret = ret[0]
 
-    await bot.edit_message_text(
-        chat_id=chat_id,
-        message_id=msg_id,
-        text='下载涩图中……'
-    )
+    await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="下载涩图中……")
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    ret["urls"]["original"],
-                    proxy=config.telegram_proxy,
-                    timeout=aiohttp.ClientTimeout(total=60),
-                    headers={"referer": "https://www.pixiv.net/"},
+                ret["urls"]["original"],
+                proxy=config.telegram_proxy,
+                timeout=aiohttp.ClientTimeout(total=60),
+                headers={"referer": "https://www.pixiv.net/"},
             ) as response:
                 pic = await response.read()
     except:
-        logger.exception('获取涩图URL失败')
+        logger.exception("获取涩图URL失败")
         await bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=msg_id,
-            text='啊呜……图片下载失败惹……'
+            chat_id=chat_id, message_id=msg_id, text="啊呜……图片下载失败惹……"
         )
 
-    await bot.edit_message_text(
-        chat_id=chat_id,
-        message_id=msg_id,
-        text='上传涩图中……'
-    )
+    await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="上传涩图中……")
 
     caption = (
         f"<b>奉上{'R18' if r18 else ''}涩图一张~</b>\n"
@@ -118,10 +92,16 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         f'作者：<a href="https://www.pixiv.net/users/{ret["uid"]}">{escape(ret["author"])}</a>\n'
         f'标签：{"；".join([f"<code>{escape(x)}</code>" for x in ret["tags"]])}'
     )
-    markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(
-        text="社保了！多来点！！" if r18 else "不够涩！我还要！！",
-        callback_data=f"sexpic|more|{arg}|{r18}"
-    )]])
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="社保了！多来点！！" if r18 else "不够涩！我还要！！",
+                    callback_data=f"sexpic|more|{arg}|{r18}",
+                )
+            ]
+        ]
+    )
     try:
         cache = PluginCache(f'{ret["pid"]}_p{ret["p"]}.{ret["ext"]}')
         await cache.set_bytes(pic)
@@ -131,30 +111,24 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
             caption=caption,
             parse_mode="HTML",
             reply_markup=markup,
-            reply_to_message_id=reply_to
+            reply_to_message_id=reply_to,
         )
     except:
         return await bot.edit_message_text(
             chat_id=chat_id,
             message_id=msg_id,
-            text=f'<b>呜……图片上传失败……请试试看点击图片标题跳转到Pixiv查看</b>\n\n{caption}',
+            text=f"<b>呜……图片上传失败……请试试看点击图片标题跳转到Pixiv查看</b>\n\n{caption}",
             reply_markup=markup,
-            parse_mode="HTML"
+            parse_mode="HTML",
         )
     else:
         await bot.delete_message(message_id=msg_id, chat_id=chat_id)
 
 
-@on("", rule=inline_rule('sexpic')).handle()
+@on("", rule=inline_rule("sexpic")).handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
     data = state["data"]
     arg = data[2]
     r18 = int(data[3])
     await bot.answer_callback_query(callback_query_id=event.id)
-    await get_setu(
-        bot,
-        event.message.chat.id,
-        arg,
-        r18,
-        event.message.message_id
-    )
+    await get_setu(bot, event.message.chat.id, arg, r18, event.message.message_id)

@@ -44,11 +44,11 @@ async def _1(matcher: Matcher, event: MessageEvent, state: T_State):
 
 @handler.handle()
 async def _2(
-        bot: Bot,
-        matcher: Matcher,
-        state: T_State,
-        event: MessageEvent,
-        code: str = EventPlainText(),
+    bot: Bot,
+    matcher: Matcher,
+    state: T_State,
+    event: MessageEvent,
+    code: str = EventPlainText(),
 ):
     api = state["api"]
     msg_id = (await matcher.send("登录中"))["result"]["message_id"]
@@ -107,8 +107,8 @@ async def sync(bot: Bot, event: MessageEvent, api: PixivAPI, reply_id):
 
         await asyncio.sleep(random.randint(1, 3))
         if not (
-                (next_url := bookmarks["next_url"])
-                and (max_bookmark_id := re.search("max_bookmark_id=([0-9]+)", next_url))
+            (next_url := bookmarks["next_url"])
+            and (max_bookmark_id := re.search("max_bookmark_id=([0-9]+)", next_url))
         ):
             break
         max_bookmark_id = max_bookmark_id.group(1)
@@ -125,6 +125,7 @@ async def sync(bot: Bot, event: MessageEvent, api: PixivAPI, reply_id):
     success = 0
     fail = 0
     for n, i in enumerate(will_sync):
+
         def get_tip():
             return f"正在发送 {n + 1} / {total}\n成功 {success}，失败 {fail}"
 
@@ -142,12 +143,12 @@ async def sync(bot: Bot, event: MessageEvent, api: PixivAPI, reply_id):
             try:
                 async with ClientSession() as s:
                     async with s.get(
-                            i["meta_single_page"]["original_image_url"],
-                            proxy=config.telegram_proxy,
-                            headers={
-                                "Referer": "https://www.pixiv.net/",
-                                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-                            },
+                        i["meta_single_page"]["original_image_url"],
+                        proxy=config.telegram_proxy,
+                        headers={
+                            "Referer": "https://www.pixiv.net/",
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+                        },
                     ) as r:
                         pic = await r.read()
                 cache = PluginCache(f'{i["id"]}_original.png')
@@ -156,7 +157,7 @@ async def sync(bot: Bot, event: MessageEvent, api: PixivAPI, reply_id):
                     chat_id=chat_id,
                     document=cache.get_path(),
                     caption=caption,
-                    parse_mode="HTML"
+                    parse_mode="HTML",
                 )
             except:
                 logger.exception("上传图片失败")
@@ -178,7 +179,7 @@ async def sync(bot: Bot, event: MessageEvent, api: PixivAPI, reply_id):
             success += 1
             await edit_message_text(get_tip())
 
-            synced.append(i['id'])
+            synced.append(i["id"])
             await data.set(str(api.user_id), synced)
 
             await asyncio.sleep(config.pixiv_send_delay)  # QPS限制

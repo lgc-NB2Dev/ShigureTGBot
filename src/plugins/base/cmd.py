@@ -25,10 +25,10 @@ class BotCommand(RawBotCommand):
 
 
 async def command_rule(
-        event: MessageEvent,
-        state: T_State,
-        arg: Message = CommandArg(),
-        cmd: str = RawCommand(),
+    event: MessageEvent,
+    state: T_State,
+    arg: Message = CommandArg(),
+    cmd: str = RawCommand(),
 ):
     def simple_check(msg_, cmd_):
         return msg_ == cmd_ or msg_.startswith(f"{cmd_} ")

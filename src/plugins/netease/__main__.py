@@ -32,7 +32,7 @@ def get_random_str(length: int = 6):
 
 @on_command("netease", "网易云音乐点歌").handle()
 async def _(
-        bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
 ):
     arg = arg.extract_plain_text().strip()
     if not arg:
@@ -124,7 +124,7 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     await edit_message_text(
         msg,
         parse_mode="HTML",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_buttons)
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_buttons),
     )
 
 
@@ -137,7 +137,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
     await bot.edit_message_reply_markup(
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
         message_id=msg_id,
-        chat_id=chat_id
+        chat_id=chat_id,
     )
 
     # 获取歌曲信息
@@ -241,7 +241,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
             msg += f'\n文件上传失败，请点击<a href="{info_down["url"]}">这里</a>收听'
 
 
-@on("", rule=inline_rule('netease')).handle()
+@on("", rule=inline_rule("netease")).handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
     async def process():
         data = state["data"]
