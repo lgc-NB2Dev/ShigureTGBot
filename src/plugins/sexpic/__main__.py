@@ -18,8 +18,7 @@ config = get_driver().config
 @on_command("sexpic_r18", "不够涩！！我要更涩的！！！").handle()
 @on_command("sexpic", "涩图！我要涩涩！！").handle()
 async def _(
-        bot: Bot, event: MessageEvent, arg: Message = CommandArg(),
-        cmd: str = RawCommand()
+    bot: Bot, event: MessageEvent, arg: Message = CommandArg(), cmd: str = RawCommand()
 ):
     await get_setu(
         bot,
@@ -51,8 +50,8 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                    "https://api.lolicon.app/setu/v2",
-                    json={"proxy": 0, "num": 1, "tag": tag, "r18": r18},
+                "https://api.lolicon.app/setu/v2",
+                json={"proxy": 0, "num": 1, "tag": tag, "r18": r18},
             ) as response:
                 ret = await response.json()
     except:
@@ -106,10 +105,10 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                    ret["urls"]["original"],
-                    proxy=getattr(config, 'telegram_proxy', None),
-                    timeout=aiohttp.ClientTimeout(total=60),
-                    headers={"referer": "https://www.pixiv.net/"},
+                ret["urls"]["original"],
+                proxy=getattr(config, "telegram_proxy"),
+                timeout=aiohttp.ClientTimeout(total=60),
+                headers={"referer": "https://www.pixiv.net/"},
             ) as response:
                 pic = await response.read()
     except:
