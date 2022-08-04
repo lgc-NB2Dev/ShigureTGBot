@@ -67,24 +67,6 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         )
     ret = ret[0]
 
-    await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="下载涩图中……")
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                ret["urls"]["original"],
-                proxy=getattr(config, 'telegram_proxy'),
-                timeout=aiohttp.ClientTimeout(total=60),
-                headers={"referer": "https://www.pixiv.net/"},
-            ) as response:
-                pic = await response.read()
-    except:
-        logger.exception("获取涩图URL失败")
-        await bot.edit_message_text(
-            chat_id=chat_id, message_id=msg_id, text="啊呜……图片下载失败惹……"
-        )
-
-    await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="上传涩图中……")
-
     caption = (
         f"<b>奉上{'R18' if r18 else ''}涩图一张~</b>\n"
         f'PID：<code>{ret["pid"]}</code>\n'
@@ -102,6 +84,29 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
             ]
         ]
     )
+
+    await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="下载涩图中……")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                ret["urls"]["original"],
+                proxy=getattr(config, 'telegram_proxy', None),
+                timeout=aiohttp.ClientTimeout(total=60),
+                headers={"referer": "https://www.pixiv.net/"},
+            ) as response:
+                pic = await response.read()
+    except:
+        logger.exception("获取涩图URL失败")
+        return await bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=msg_id,
+            text=f"<b>呜……图片下载失败……\n请试试看点击图片标题跳转到Pixiv查看</b>\n\n{caption}",
+            reply_markup=markup,
+            parse_mode="HTML",
+        )
+
+    await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="上传涩图中……")
+
     try:
         cache = PluginCache(f'{ret["pid"]}_p{ret["p"]}.{ret["ext"]}')
         await cache.set_bytes(pic)
@@ -114,10 +119,11 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
             reply_to_message_id=reply_to,
         )
     except:
+        logger.exception("上传涩图失败")
         return await bot.edit_message_text(
             chat_id=chat_id,
             message_id=msg_id,
-            text=f"<b>呜……图片上传失败……请试试看点击图片标题跳转到Pixiv查看</b>\n\n{caption}",
+            text=f"<b>呜……图片上传失败……\n请试试看点击图片标题跳转到Pixiv查看</b>\n\n{caption}",
             reply_markup=markup,
             parse_mode="HTML",
         )
