@@ -18,7 +18,8 @@ config = get_driver().config
 @on_command("sexpic_r18", "不够涩！！我要更涩的！！！").handle()
 @on_command("sexpic", "涩图！我要涩涩！！").handle()
 async def _(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg(), cmd: str = RawCommand()
+        bot: Bot, event: MessageEvent, arg: Message = CommandArg(),
+        cmd: str = RawCommand()
 ):
     await get_setu(
         bot,
@@ -30,7 +31,7 @@ async def _(
 
 
 async def get_setu(bot, chat_id, arg, r18, reply_to=None):
-    tag = arg.split(",")
+    tag = [xx for x in arg.split(" ") if (xx := x.strip())]
     if len(tag) > 3:
         return await bot.send_message(
             chat_id=chat_id, text="and规则的tag匹配数不能超过3个", reply_to_message_id=reply_to
@@ -50,8 +51,8 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
-                "https://api.lolicon.app/setu/v2",
-                json={"proxy": 0, "num": 1, "tag": tag, "r18": r18},
+                    "https://api.lolicon.app/setu/v2",
+                    json={"proxy": 0, "num": 1, "tag": tag, "r18": r18},
             ) as response:
                 ret = await response.json()
     except:
@@ -67,19 +68,35 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         )
     ret = ret[0]
 
+    search_tags = []
+    for t in tag:
+        search_tags.extend(t.split('|'))
+
+    pic_tags = []
+    for t in ret["tags"]:  # type:str
+        find = False
+        et = escape(t)
+        for tt in search_tags:
+            if t.find(tt) != -1:
+                pic_tags.append(f'<b>{et}</b>')
+                find = True
+                break
+        if not find:
+            pic_tags.append(f'<code>{et}</code>')
+
     caption = (
         f"<b>奉上{'R18' if r18 else ''}涩图一张~</b>\n"
         f'PID：<code>{ret["pid"]}</code>\n'
         f'标题：<a href="https://www.pixiv.net/artworks/{ret["pid"]}">{escape(ret["title"])}</a>\n'
         f'作者：<a href="https://www.pixiv.net/users/{ret["uid"]}">{escape(ret["author"])}</a>\n'
-        f'标签：{"；".join([f"<code>{escape(x)}</code>" for x in ret["tags"]])}'
+        f'标签：{"；".join(pic_tags)}'
     )
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text="社保了！多来点！！" if r18 else "不够涩！我还要！！",
-                    callback_data=f"sexpic|more|{arg}|{r18}",
+                    callback_data=f"sexpic|more|{'|'.join(tag)}|{r18}",
                 )
             ]
         ]
@@ -89,10 +106,10 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                ret["urls"]["original"],
-                proxy=getattr(config, 'telegram_proxy', None),
-                timeout=aiohttp.ClientTimeout(total=60),
-                headers={"referer": "https://www.pixiv.net/"},
+                    ret["urls"]["original"],
+                    proxy=getattr(config, 'telegram_proxy', None),
+                    timeout=aiohttp.ClientTimeout(total=60),
+                    headers={"referer": "https://www.pixiv.net/"},
             ) as response:
                 pic = await response.read()
     except:
@@ -134,7 +151,13 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
 @on("", rule=inline_rule("sexpic")).handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
     data = state["data"]
-    arg = data[2]
-    r18 = int(data[3])
+    arg = '|'.join(data[2:-1])
+    r18 = int(data[-1])
     await bot.answer_callback_query(callback_query_id=event.id)
-    await get_setu(bot, event.message.chat.id, arg, r18, event.message.message_id)
+    await get_setu(
+        bot,
+        event.message.chat.id,
+        arg,
+        r18,
+        event.message.message_id
+    )
