@@ -95,7 +95,7 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
             [
                 InlineKeyboardButton(
                     text="社保了！多来点！！" if r18 else "不够涩！我还要！！",
-                    callback_data=f"sexpic|more|{'|'.join(tag)}|{r18}",
+                    callback_data=f"sexpic|more|{' '.join(tag)}|{r18}",
                 )
             ]
         ]
