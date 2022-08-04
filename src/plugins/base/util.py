@@ -1,3 +1,4 @@
+import time
 from typing import Iterable
 
 from awaits.awaitable import awaitable
@@ -25,3 +26,7 @@ async def async_wrapper(origin_func, *args, **kwargs):
         return origin_func(*args, **kwargs)
 
     return await wrapper_()
+
+
+def get_timestamp():
+    return round(time.time() * 1000)

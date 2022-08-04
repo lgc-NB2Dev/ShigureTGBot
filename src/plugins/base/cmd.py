@@ -11,10 +11,8 @@ from nonebot.internal.params import Depends
 from nonebot.matcher import Matcher
 from nonebot.params import RawCommand, CommandArg
 from nonebot.typing import T_State
-from pathlib import Path
 
 from ..base.const import LINE_SEP, CMD_TRUE_ARG_KEY
-from ..data import PluginData
 
 driver = get_driver()
 
@@ -27,10 +25,10 @@ class BotCommand(RawBotCommand):
 
 
 async def command_rule(
-    event: MessageEvent,
-    state: T_State,
-    arg: Message = CommandArg(),
-    cmd: str = RawCommand(),
+        event: MessageEvent,
+        state: T_State,
+        arg: Message = CommandArg(),
+        cmd: str = RawCommand(),
 ):
     def simple_check(msg_, cmd_):
         return msg_ == cmd_ or msg_.startswith(f"{cmd_} ")

@@ -3,11 +3,7 @@ from hashlib import sha256
 from secrets import token_urlsafe
 from urllib.parse import urlencode
 
-from nonebot import logger
-from nonebot.adapters.telegram import Bot
 from pixivpy_async.aapi import AppPixivAPI
-
-from .config import config
 
 
 class PixivAPI(AppPixivAPI):
@@ -57,16 +53,3 @@ class PixivAPI(AppPixivAPI):
         self.user_name = ret["user"]["name"]
 
         return ret
-
-
-async def login(bot: Bot):
-    if config.pixiv_oauth_user:
-        try:
-            await api.login_web_with_bot(bot)
-        except Exception as e:
-            logger.opt(exception=e).exception("Pixiv登录失败")
-            return await bot.send_message(
-                chat_id=config.pixiv_oauth_user, text=f"登录失败\n{e!r}"
-            )
-    else:
-        logger.info("Pixiv未登录")
