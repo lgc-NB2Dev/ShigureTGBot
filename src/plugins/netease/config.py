@@ -1,5 +1,9 @@
+from pathlib import Path
+
 from nonebot import get_driver
 from pydantic import BaseSettings
+
+from ..data import PluginData
 
 
 class Config(BaseSettings):
@@ -16,3 +20,5 @@ class Config(BaseSettings):
 
 global_config = get_driver().config
 config = Config.parse_obj(global_config)
+
+data = PluginData(Path(__file__).parent.name)
