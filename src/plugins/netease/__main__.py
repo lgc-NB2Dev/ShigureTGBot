@@ -309,6 +309,4 @@ async def _(matcher: Matcher, bot: Bot, event: MessageEvent):
         return await bot.edit_message_text(
             chat_id=event.chat.id, message_id=msg_id, text=f"登录失败\n{ret!r}"
         )
-    await bot.edit_message_text(
-        chat_id=event.chat.id, message_id=msg_id, text="登录成功"
-    )
+    await bot.edit_message_text(chat_id=event.chat.id, message_id=msg_id, text="登录成功")
