@@ -111,7 +111,7 @@ async def sync(bot: Bot, event: MessageEvent, api: PixivAPI, reply_id):
             and (max_bookmark_id := re.search("max_bookmark_id=([0-9]+)", next_url))
         ):
             break
-        max_bookmark_id = max_bookmark_id.group(1)
+        max_bookmark_id = max_bookmark_id[1]
         # print(max_bookmark_id)
         i += 1
 

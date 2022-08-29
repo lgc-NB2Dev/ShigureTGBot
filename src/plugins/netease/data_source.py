@@ -13,22 +13,21 @@ if config.netease_fake_ip:
 
 
 async def login():
-    if config.netease_login:
-        logger.info("开始登录网易云音乐")
-        try:
-            ret = await wrapper(
-                LoginViaCellphone,
-                phone=config.netease_phone,
-                password=config.netease_pwd,
-                ctcode=config.netease_ct_code,
-            )
-            nick = ret["content"]["profile"]["nickname"]
-        except LoginFailedException as e:
-            logger.opt(exception=e).exception("登录失败，功能将会受到限制")
-            return e
-        logger.info(f"欢迎您，{nick}")
-    else:
+    if not config.netease_login:
         return ValueError("配置文件中 netease_login 不为真")
+    logger.info("开始登录网易云音乐")
+    try:
+        ret = await wrapper(
+            LoginViaCellphone,
+            phone=config.netease_phone,
+            password=config.netease_pwd,
+            ctcode=config.netease_ct_code,
+        )
+        nick = ret["content"]["profile"]["nickname"]
+    except LoginFailedException as e:
+        logger.opt(exception=e).exception("登录失败，功能将会受到限制")
+        return e
+    logger.info(f"欢迎您，{nick}")
 
 
 async def search(name, limit=config.netease_list_limit, page=1, stype=SONG):

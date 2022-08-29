@@ -101,13 +101,13 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
             inline_buttons.append(tmp_row.copy())
             tmp_row.clear()
 
-    if not page - 1 == 0:
+    if page != 1:
         tmp_row.append(
             InlineKeyboardButton(
                 text="< 上一页", callback_data=f"netease|music|page|{salt}|{page - 1}"
             )
         )
-    if not page == max_page:
+    if page != max_page:
         tmp_row.append(
             InlineKeyboardButton(
                 text="下一页 >", callback_data=f"netease|music|page|{salt}|{page + 1}"
@@ -199,7 +199,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
         else:
             audio_file = None
 
-    msg = list()
+    msg = []
     msg.append(f'《<b>{escape(info_song["name"])}</b>》')
     if alia := info_song["alia"]:
         msg.append("\n".join([f"<i>{escape(x)}</i>" for x in alia]))
@@ -309,4 +309,6 @@ async def _(matcher: Matcher, bot: Bot, event: MessageEvent):
         return await bot.edit_message_text(
             chat_id=event.chat.id, message_id=msg_id, text=f"登录失败\n{ret!r}"
         )
-    await bot.edit_message_text(chat_id=event.chat.id, message_id=msg_id, text=f"登录成功")
+    await bot.edit_message_text(
+        chat_id=event.chat.id, message_id=msg_id, text="登录成功"
+    )
