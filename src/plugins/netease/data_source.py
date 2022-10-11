@@ -1,6 +1,5 @@
 from nonebot import logger
 from pyncm import GetCurrentSession
-from pyncm.apis import LoginFailedException
 from pyncm.apis.cloudsearch import GetSearchResult, SONG
 from pyncm.apis.login import LoginViaCellphone
 from pyncm.apis.track import GetTrackDetail, GetTrackAudio
@@ -22,8 +21,8 @@ async def login():
                 password=config.netease_pwd,
                 ctcode=config.netease_ct_code,
             )
-            nick = ret["content"]["profile"]["nickname"]
-        except LoginFailedException as e:
+            nick = ret["result"]["content"]["profile"]["nickname"]
+        except Exception as e:
             logger.opt(exception=e).exception("登录失败，功能将会受到限制")
             return e
         logger.info(f"欢迎您，{nick}")
