@@ -23,8 +23,10 @@ from ..cache import PluginCache
 
 driver = get_driver()
 
-handler = on_command("pixiv_login", "Pixiv收藏夹同步登录", hide=True, permission=SUPERUSER)
-sync_handler = on_command("pixiv_sync", "Pixiv收藏夹同步", hide=True, permission=SUPERUSER)
+handler = on_command("pixiv_login", "Pixiv收藏夹同步登录", hide=True,
+                     permission=SUPERUSER)
+sync_handler = on_command("pixiv_sync", "Pixiv收藏夹同步", hide=True,
+                          permission=SUPERUSER)
 
 api = PixivAPI(proxy=config.telegram_proxy)
 syncing = False
@@ -52,7 +54,8 @@ async def _(bot: Bot):
 @handler.handle()
 async def _1(bot: Bot, matcher: Matcher, event: MessageEvent, state: T_State):
     if api.refresh_token:
-        msg_id = (await matcher.send("发现 refresh_token，尝试直接登录"))["result"]["message_id"]
+        msg_id = (await matcher.send("发现 refresh_token，尝试直接登录"))["result"][
+            "message_id"]
 
         try:
             await login_via_token()
@@ -83,11 +86,11 @@ async def _1(bot: Bot, matcher: Matcher, event: MessageEvent, state: T_State):
 
 @handler.handle()
 async def _2(
-    bot: Bot,
-    matcher: Matcher,
-    state: T_State,
-    event: MessageEvent,
-    code: str = EventPlainText(),
+        bot: Bot,
+        matcher: Matcher,
+        state: T_State,
+        event: MessageEvent,
+        code: str = EventPlainText(),
 ):
     msg_id = (await matcher.send("登录中"))["result"]["message_id"]
     await bot.delete_message(chat_id=event.chat.id, message_id=state["old_msg_id"])
@@ -126,7 +129,8 @@ async def sync(bot: Bot = None, chat_id=None):
         chat_id = config.superusers[0]
 
     if syncing:
-        return await bot.send_message(chat_id=chat_id, text="已有同步进程运行中，请勿重复运行")
+        return await bot.send_message(chat_id=chat_id,
+                                      text="已有同步进程运行中，请勿重复运行")
 
     syncing = True
     try:
@@ -138,7 +142,8 @@ async def sync(bot: Bot = None, chat_id=None):
 
 
 async def _sync(bot, _chat_id):
-    _msg_id = (await bot.send_message(chat_id=_chat_id, text="尝试自动重登……"))["result"][
+    _msg_id = \
+    (await bot.send_message(chat_id=_chat_id, text="尝试自动重登……"))["result"][
         "message_id"
     ]
 
@@ -180,8 +185,8 @@ async def _sync(bot, _chat_id):
 
         await asyncio.sleep(random.randint(1, 3))
         if not (
-            (next_url := bookmarks["next_url"])
-            and (max_bookmark_id := re.search("max_bookmark_id=([0-9]+)", next_url))
+                (next_url := bookmarks["next_url"])
+                and (max_bookmark_id := re.search("max_bookmark_id=([0-9]+)", next_url))
         ):
             break
         max_bookmark_id = max_bookmark_id.group(1)
@@ -240,12 +245,12 @@ async def _sync(bot, _chat_id):
         async def req(_u):
             async with ClientSession() as s:
                 async with s.get(
-                    _u,
-                    proxy=config.telegram_proxy,
-                    headers={
-                        "Referer": "https://www.pixiv.net/",
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
-                    },
+                        _u,
+                        proxy=config.telegram_proxy,
+                        headers={
+                            "Referer": "https://www.pixiv.net/",
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",
+                        },
                 ) as r:
                     pic = await r.read()
             cache = PluginCache(_u.split("/")[-1])
@@ -262,7 +267,11 @@ async def _sync(bot, _chat_id):
             logger.exception("下载图片失败")
             await bot.send_message(
                 chat_id=_chat_id,
-                text=f'ERROR: 同步作品 <a href="https://www.pixiv.net/artworks/{i["id"]}">{escape(i["title"])}</a> 时出错！\n{e!r}',
+                text=(f'ERROR: 同步作品 '
+                      f'<a href="https://www.pixiv.net/artworks/{i["id"]}">'
+                      f'{escape(i["title"])}</a> 时出错！\n'
+                      f'下载图片失败\n'
+                      f'{e!r}'),
                 parse_mode="HTML",
             )
             fail += 1
@@ -301,8 +310,17 @@ async def _sync(bot, _chat_id):
                             if (d_len > 1 and ii < (d_len - 1))
                             else config.pixiv_sync_delay
                         )
-            except:
+            except Exception as e:
                 logger.exception("上传图片失败")
+                await bot.send_message(
+                    chat_id=_chat_id,
+                    text=(f'ERROR: 同步作品 '
+                          f'<a href="https://www.pixiv.net/artworks/{i["id"]}">'
+                          f'{escape(i["title"])}</a> 时出错！\n'
+                          f'上传图片失败\n'
+                          f'{e!r}'),
+                    parse_mode="HTML",
+                )
                 failed = True
                 fail += 1
                 break

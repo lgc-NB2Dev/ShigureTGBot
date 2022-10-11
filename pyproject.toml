@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ShigureTGBot"
-version = "0.2.2"
+version = "0.2.3"
 description = "ShigureTGBot"
 authors = ["student_2333 <lgc2333@126.com>"]
 readme = "README.md"

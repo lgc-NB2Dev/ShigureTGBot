@@ -8,4 +8,4 @@ PIXIV_SEND_DELAY 每条消息发送间隔
 """
 from .__main__ import *
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
