@@ -134,7 +134,8 @@ async def sync(bot: Bot = None, chat_id=None):
     except Exception as e:
         logger.opt(exception=e).exception("同步时出现意外错误")
         await bot.send_message(chat_id=chat_id, text=f"同步时出现意外错误\n{e!r}")
-    syncing = False
+    finally:
+        syncing = False
 
 
 async def _sync(bot, _chat_id):
