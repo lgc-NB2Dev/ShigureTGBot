@@ -268,7 +268,7 @@ async def _sync(bot, _chat_id):
                     f'<a href="https://www.pixiv.net/artworks/{i["id"]}">'
                     f'{escape(i["title"])}</a> 时出错！\n'
                     f"下载图片失败\n"
-                    f"{e!r}"
+                    f"{escape(repr(e))}"
                 ),
                 parse_mode="HTML",
             )
@@ -317,7 +317,7 @@ async def _sync(bot, _chat_id):
                         f'<a href="https://www.pixiv.net/artworks/{i["id"]}">'
                         f'{escape(i["title"])}</a> 时出错！\n'
                         f"上传图片失败\n"
-                        f"{e!r}"
+                        f"{escape(repr(e))}"
                     ),
                     parse_mode="HTML",
                 )

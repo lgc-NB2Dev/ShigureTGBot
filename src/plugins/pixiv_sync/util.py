@@ -9,5 +9,6 @@ def split_list(li: list, length: int):
         if (n + 1) % length == 0:
             latest.append(deepcopy(tmp))
             tmp.clear()
-    latest.append(deepcopy(tmp))
+    if tmp:
+        latest.append(deepcopy(tmp))
     return latest
