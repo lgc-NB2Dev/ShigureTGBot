@@ -16,11 +16,11 @@ async def _(matcher: Matcher, event: MessageEvent):
             '使用框架：<a href="https://github.com/nonebot/nonebot2">NoneBot2</a>\n'
             "鸣谢：\n"
             '  - <a href="https://github.com/MinatoAquaCrews/nonebot_plugin_crazy_thursday">'
-            'nonebot-plugin-crazy-thursday</a>\n'
-            '    疯狂星期四语录原插件\n'
+            "nonebot-plugin-crazy-thursday</a>\n"
+            "    疯狂星期四语录原插件\n"
             '  - <a href="https://github.com/xipesoy/zhenxun_plugin_meiriyiju">'
-            'zhenxun-plugin-meiriyiju</a>\n'
-            '    发癫语录原插件\n'
+            "zhenxun-plugin-meiriyiju</a>\n"
+            "    发癫语录原插件\n"
             f"{LINE_SEP}\n"
             '<a href="https://t.me/stu2333_pd/50">请我喝杯奶茶</a> | '
             '<a href="https://t.me/stu2333_home">一起聊天</a>'
