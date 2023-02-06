@@ -272,7 +272,6 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
         s_data = state["data"]
         match s_data[1]:
             case "music":
-
                 match s_data[2]:
                     case "page":
                         await edit_search_music_msg(
