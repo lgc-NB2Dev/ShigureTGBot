@@ -14,12 +14,12 @@ from nonebot.permission import SUPERUSER
 from nonebot.typing import T_State
 from nonebot_plugin_apscheduler import scheduler
 
-from .config import config, data
-from .data_source import PixivAPI
-from .util import split_list
 from ..base.cmd import on_command
 from ..base.const import LINE_SEP
 from ..cache import PluginCache
+from .config import config, data
+from .data_source import PixivAPI
+from .util import split_list
 
 driver = get_driver()
 
@@ -218,7 +218,7 @@ async def _sync(bot, _chat_id):
             f'From: <a href="https://www.pixiv.net/users/{api.user_id}">{escape(api.user_name)}</a>\n'
             f"{LINE_SEP}\n"
             f'PID: <code>{i["id"]}</code>\n'
-            f'Title: <a href="https://www.pixiv.net/artworks/{i["id"]}">{i["title"]}</a>\n'
+            f'Title: <a href="https://www.pixiv.net/artworks/{i["id"]}">{escape(i["title"])}</a>\n'
             f'Artist: <a href="https://www.pixiv.net/users/{i["user"]["id"]}">{escape(i["user"]["name"])}</a>\n'
             f"Tags: {tags}"
         )
