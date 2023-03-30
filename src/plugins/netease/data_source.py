@@ -1,11 +1,11 @@
 from nonebot import logger
 from pyncm import GetCurrentSession
-from pyncm.apis.cloudsearch import GetSearchResult, SONG
+from pyncm.apis.cloudsearch import SONG, GetSearchResult
 from pyncm.apis.login import LoginViaCellphone
-from pyncm.apis.track import GetTrackDetail, GetTrackAudio
+from pyncm.apis.track import GetTrackAudio, GetTrackDetail
 
-from .config import config
 from ..base.util import async_wrapper as wrapper
+from .config import config
 
 if config.netease_fake_ip:
     GetCurrentSession().headers["X-Real-IP"] = config.netease_fake_ip

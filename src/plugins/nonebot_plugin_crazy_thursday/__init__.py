@@ -2,6 +2,7 @@ import random
 from nonebot import on_regex
 from nonebot.matcher import Matcher
 from nonebot.params import Depends, RegexMatched
+from nonebot.adapters.telegram.event import MessageEvent
 from nonebot.internal.adapter.message import Message
 from .config import *
 from ..base.cmd import on_command, CommandArg
@@ -26,19 +27,23 @@ async def get_weekday_jp(arg: str = RegexMatched()) -> str:
 
 
 @crazy_cn.handle()
-async def _(matcher: Matcher, weekday: str = Depends(get_weekday_cn)):
-    await matcher.finish(rndKfc(weekday))
+async def _(
+    event: MessageEvent, matcher: Matcher, weekday: str = Depends(get_weekday_cn)
+):
+    await matcher.finish(rndKfc(weekday), reply_to_message_id=event.message_id)
 
 
 @crazy_jp.handle()
-async def _(matcher: Matcher, weekday: str = Depends(get_weekday_jp)):
-    await matcher.finish(rndKfc(weekday))
+async def _(
+    event: MessageEvent, matcher: Matcher, weekday: str = Depends(get_weekday_jp)
+):
+    await matcher.finish(rndKfc(weekday), reply_to_message_id=event.message_id)
 
 
 @crazy_cmd.handle()
-async def _(matcher: Matcher, weekday: Message = CommandArg()):
+async def _(event: MessageEvent, matcher: Matcher, weekday: Message = CommandArg()):
     weekday = weekday.extract_plain_text().strip() or "四"
-    await matcher.finish(rndKfc(weekday))
+    await matcher.finish(rndKfc(weekday), reply_to_message_id=event.message_id)
 
 
 def rndKfc(day: str) -> str:

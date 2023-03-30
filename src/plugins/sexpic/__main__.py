@@ -3,12 +3,12 @@ from html import escape
 import aiohttp
 from nonebot import get_driver, logger, on
 from nonebot.adapters.telegram import Bot, Message
-from nonebot.adapters.telegram.event import MessageEvent, CallbackQueryEvent
-from nonebot.adapters.telegram.model import InlineKeyboardMarkup, InlineKeyboardButton
+from nonebot.adapters.telegram.event import CallbackQueryEvent, MessageEvent
+from nonebot.adapters.telegram.model import InlineKeyboardButton, InlineKeyboardMarkup
 from nonebot.params import RawCommand
 from nonebot.typing import T_State
 
-from ..base.cmd import on_command, CommandArg
+from ..base.cmd import CommandArg, on_command
 from ..base.rule import inline_rule
 from ..cache import PluginCache
 

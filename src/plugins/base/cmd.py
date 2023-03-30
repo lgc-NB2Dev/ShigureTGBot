@@ -4,15 +4,15 @@
 from nonebot import get_driver, logger
 from nonebot import on_command as raw_on_command
 from nonebot.adapters.telegram import Bot, Message
-from nonebot.adapters.telegram.event import MessageEvent, GroupMessageEvent
+from nonebot.adapters.telegram.event import GroupMessageEvent, MessageEvent
 from nonebot.adapters.telegram.model import BotCommand as RawBotCommand
-from nonebot.consts import PREFIX_KEY, CMD_ARG_KEY
+from nonebot.consts import CMD_ARG_KEY, PREFIX_KEY
 from nonebot.internal.params import Depends
 from nonebot.matcher import Matcher
-from nonebot.params import RawCommand, CommandArg
+from nonebot.params import CommandArg, RawCommand
 from nonebot.typing import T_State
 
-from ..base.const import LINE_SEP, CMD_TRUE_ARG_KEY
+from ..base.const import CMD_TRUE_ARG_KEY, LINE_SEP
 
 driver = get_driver()
 

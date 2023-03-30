@@ -2,6 +2,7 @@ from typing import Awaitable, Callable, NoReturn
 
 from nonebot import on_regex, require
 from nonebot.internal.adapter import Message
+from nonebot.adapters.telegram.event import MessageEvent
 from nonebot.matcher import Matcher
 
 from ..base.cmd import CommandArg, on_command
@@ -15,7 +16,7 @@ motd_handler = on_command("motd", "获取 Minecraft 服务器信息", aliases={"
 
 
 @motd_handler.handle()
-async def _(matcher: Matcher, arg: Message = CommandArg()):
+async def _(matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()):
     arg = arg.extract_plain_text()
 
     svr_type: ServerType = "je"
@@ -27,14 +28,18 @@ async def _(matcher: Matcher, arg: Message = CommandArg()):
             break
 
     arg = arg.strip()
-    await matcher.finish(await draw(arg, svr_type))
+    await matcher.finish(
+        await draw(arg, svr_type), reply_to_message_id=event.message_id
+    )
 
 
 def get_shortcut_handler(
     host: str, svr_type: ServerType
 ) -> Callable[[...], Awaitable[NoReturn]]:
-    async def shortcut_handler(matcher: Matcher):
-        await matcher.finish(await draw(host, svr_type))
+    async def shortcut_handler(matcher: Matcher, event: MessageEvent):
+        await matcher.finish(
+            await draw(host, svr_type), reply_to_message_id=event.message_id
+        )
 
     return shortcut_handler
 

@@ -7,23 +7,20 @@ from html import escape
 
 from aiohttp import ClientSession
 from nonebot import on
-from nonebot.adapters.telegram import Message, Bot
-from nonebot.adapters.telegram.event import MessageEvent, CallbackQueryEvent
+from nonebot.adapters.telegram import Bot, Message
+from nonebot.adapters.telegram.event import CallbackQueryEvent, MessageEvent
 from nonebot.adapters.telegram.exception import NetworkError
-from nonebot.adapters.telegram.model import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-)
+from nonebot.adapters.telegram.model import InlineKeyboardButton, InlineKeyboardMarkup
 from nonebot.matcher import Matcher
 from nonebot.permission import SUPERUSER
 from nonebot.typing import T_State
 
-from .config import data
-from .data_source import *
-from ..base.cmd import on_command, CommandArg
+from ..base.cmd import CommandArg, on_command
 from ..base.const import LINE_SEP
 from ..base.rule import inline_rule
 from ..cache import PluginCache
+from .config import data
+from .data_source import *
 
 asyncio.get_event_loop().run_until_complete(login())
 
