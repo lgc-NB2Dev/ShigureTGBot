@@ -4,13 +4,13 @@ from asyncio.exceptions import TimeoutError
 from io import BytesIO
 from typing import Optional, Union
 
-from PIL.Image import Resampling
 from mcstatus import BedrockServer, JavaServer
 from mcstatus.bedrock_status import BedrockStatusResponse
 from mcstatus.pinger import PingResponse
 from nonebot import get_driver, logger
 from nonebot.adapters.telegram.message import File
-from nonebot_plugin_imageutils import BuildImage, Text2Image
+from PIL.Image import Resampling
+from pil_utils import BuildImage, Text2Image
 
 from .const import CODE_COLOR, GAME_MODE_MAP, STROKE_COLOR, ServerType
 from .res import DEFAULT_ICON_RES, DIRT_RES, GRASS_RES

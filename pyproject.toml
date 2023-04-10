@@ -7,19 +7,36 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0.0"
-nonebot2 = {extras = ["httpx"], version = "^2.0.0-beta.4"}
-nonebot-adapter-telegram = "^0.1.0-beta.3"
-pyncm = ">=1.6.6"
+nonebot2 = { extras = ["fastapi", "httpx"], version = "^2.0.0rc4" }
+pyncm = "^1.6.6"
 awaits = "^0.0.1"
 aiohttp = "^3.8.1"
 pathlib = "^1.0.1"
 PixivPy-Async = "^1.2.14"
-nonebot-plugin-apscheduler = "^0.2.0"
 httpx = "^0.23.3"
+pillow = "^9.5.0"
+mcstatus = "^10.0.2"
+pil-utils = "^0.1.6"
+psutil = "^5.9.4"
+aiofiles = ">=0.8.0,<0.9.0"
+nonebot-plugin-apscheduler = "^0.2.0"
+nonebot-adapter-telegram = "0.1.0b4"
+nonebot-plugin-fuckyou = "^0.1.0"
 
 [tool.poetry.dev-dependencies]
-nb-cli = ">=0.6.0"
+nb-cli = "^1.0.5"
 
 [build-system]
 requires = ["poetry_core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.nonebot]
+preload_plugins = ["nonebot_plugin_apscheduler"]
+plugins = ["nonebot_plugin_fuckyou"]
+plugin_dirs = ["src/plugins"]
+
+[[tool.nonebot.adapters]]
+name = "Telegram"
+module_name = "nonebot.adapters.telegram"
+project_link = "nonebot-adapter-telegram"
+desc = "Telegram 协议"

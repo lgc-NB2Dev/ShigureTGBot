@@ -1,8 +1,8 @@
 from typing import Awaitable, Callable, NoReturn
 
 from nonebot import on_regex, require
-from nonebot.internal.adapter import Message
 from nonebot.adapters.telegram.event import MessageEvent
+from nonebot.internal.adapter import Message
 from nonebot.matcher import Matcher
 
 from ..base.cmd import CommandArg, on_command
