@@ -1,11 +1,16 @@
+import json
 import random
+from pathlib import Path
+from typing import List
+
 from nonebot import on_regex
-from nonebot.matcher import Matcher
-from nonebot.params import Depends, RegexMatched
 from nonebot.adapters.telegram.event import MessageEvent
 from nonebot.internal.adapter.message import Message
-from .config import *
-from ..base.cmd import on_command, CommandArg
+from nonebot.matcher import Matcher
+from nonebot.params import Depends, RegexMatched
+
+from ..base.cmd import CommandArg, on_command
+from .config import crazy_config
 
 __crazy_thursday_version__ = "v0.2.6"
 __crazy_thursday_notes__ = f"""
@@ -28,25 +33,29 @@ async def get_weekday_jp(arg: str = RegexMatched()) -> str:
 
 @crazy_cn.handle()
 async def _(
-    event: MessageEvent, matcher: Matcher, weekday: str = Depends(get_weekday_cn)
+    event: MessageEvent,
+    matcher: Matcher,
+    weekday: str = Depends(get_weekday_cn),
 ):
-    await matcher.finish(rndKfc(weekday), reply_to_message_id=event.message_id)
+    await matcher.finish(rnd_kfc(weekday), reply_to_message_id=event.message_id)
 
 
 @crazy_jp.handle()
 async def _(
-    event: MessageEvent, matcher: Matcher, weekday: str = Depends(get_weekday_jp)
+    event: MessageEvent,
+    matcher: Matcher,
+    weekday: str = Depends(get_weekday_jp),
 ):
-    await matcher.finish(rndKfc(weekday), reply_to_message_id=event.message_id)
+    await matcher.finish(rnd_kfc(weekday), reply_to_message_id=event.message_id)
 
 
 @crazy_cmd.handle()
 async def _(event: MessageEvent, matcher: Matcher, weekday: Message = CommandArg()):
-    weekday = weekday.extract_plain_text().strip() or "四"
-    await matcher.finish(rndKfc(weekday), reply_to_message_id=event.message_id)
+    weekday_str = weekday.extract_plain_text().strip() or "四"
+    await matcher.finish(rnd_kfc(weekday_str), reply_to_message_id=event.message_id)
 
 
-def rndKfc(day: str) -> str:
+def rnd_kfc(day: str) -> str:
     # jp en cn
     tb: List[str] = [
         "月",
@@ -81,16 +90,15 @@ def rndKfc(day: str) -> str:
     path: Path = crazy_config.crazy_path / "post.json"
 
     # 将json对象加载到数组
-    with open(path, "r", encoding="utf-8") as f:
-        kfc = json.load(f).get("post")
+    kfc = json.loads(path.read_text(encoding="u8")).get("post")
 
-        # 随机选取数组中的一个对象，并替换日期
-        return (
-            random.choice(kfc)
-            .replace("木曜日", tb[idx] + "曜日")
-            .replace("Thursday", tb[idx + 1])
-            .replace("thursday", tb[idx + 1])
-            .replace("星期四", "星期" + tb[idx + 2])
-            .replace("周四", "周" + tb[idx + 2])
-            .replace("礼拜四", "礼拜" + tb[idx + 2])
-        )
+    # 随机选取数组中的一个对象，并替换日期
+    return (
+        random.choice(kfc)
+        .replace("木曜日", tb[idx] + "曜日")
+        .replace("Thursday", tb[idx + 1])
+        .replace("thursday", tb[idx + 1])
+        .replace("星期四", "星期" + tb[idx + 2])
+        .replace("周四", "周" + tb[idx + 2])
+        .replace("礼拜四", "礼拜" + tb[idx + 2])
+    )

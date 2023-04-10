@@ -5,6 +5,9 @@ from urllib.parse import urlencode
 
 from pixivpy_async.aapi import AppPixivAPI
 
+LOGIN_URL = "https://app-api.pixiv.net/web/v1/login"
+REDIRECT_URI = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback"
+
 
 class PixivAPI(AppPixivAPI):
     def __init__(self, **requests_kwargs):
@@ -14,8 +17,6 @@ class PixivAPI(AppPixivAPI):
         self.login_code_verifier = None
 
     async def login_web_part1(self):
-        LOGIN_URL = "https://app-api.pixiv.net/web/v1/login"
-
         def s256(data_):
             """S256 transformation method."""
             return (
@@ -35,8 +36,6 @@ class PixivAPI(AppPixivAPI):
         return f"{LOGIN_URL}?{urlencode(login_params)}"
 
     async def login_web_part2(self, code):
-        REDIRECT_URI = "https://app-api.pixiv.net/web/v1/users/auth/pixiv/callback"
-
         data = {
             "client_id": self.client_id,
             "client_secret": self.client_secret,

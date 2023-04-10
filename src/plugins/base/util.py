@@ -1,14 +1,18 @@
 import time
-from typing import Iterable
+from typing import Callable, Iterable, Optional, TypeVar
 
 from awaits.awaitable import awaitable
+from typing_extensions import ParamSpec
+
+T = TypeVar("T")
+TParam = ParamSpec("TParam")
 
 
-def escape_md(txt: str, ignores: Iterable = None):
+def escape_md(txt: str, ignores: Optional[Iterable] = None):
     # fmt:off
     chars = [
         "[", "]", "(", ")", "{", "}", "_", "*", "~", "`", ">", "#", "+", "-", "=", "|",
-        ".", "!"
+        ".", "!",
     ]
     # fmt:on
     for c in chars:
@@ -18,14 +22,13 @@ def escape_md(txt: str, ignores: Iterable = None):
     return txt
 
 
-async def async_wrapper(origin_func, *args, **kwargs):
+async def async_wrapper(
+    origin_func: Callable[TParam, T],
+    *args: TParam.args,
+    **kwargs: TParam.kwargs,
+) -> T:
     """异步调用包装"""
-
-    @awaitable
-    def wrapper_():
-        return origin_func(*args, **kwargs)
-
-    return await wrapper_()
+    return await awaitable(origin_func)(*args, **kwargs)  # type: ignore  # noqa: PGH003
 
 
 def get_timestamp():

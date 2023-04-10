@@ -3,12 +3,13 @@ import platform
 import re
 from datetime import timedelta
 from io import BytesIO
+from typing import Literal, Optional, overload
 
 import aiofiles
-from PIL import Image
 from httpx import AsyncClient
 from nonebot import logger
 from nonebot.adapters.telegram import Bot
+from PIL import Image
 
 from .config import config
 
@@ -24,7 +25,29 @@ def format_timedelta(t: timedelta):
     return s
 
 
-async def async_request(url, *args, is_text=False, proxy=None, **kwargs):
+@overload
+async def async_request(
+    url: str,
+    *args,
+    is_text: Literal[False] = False,
+    proxy: Optional[str] = None,
+    **kwargs,
+) -> bytes:
+    ...
+
+
+@overload
+async def async_request(
+    url: str,
+    *args,
+    is_text: Literal[True] = True,
+    proxy: Optional[str] = None,
+    **kwargs,
+) -> str:
+    ...
+
+
+async def async_request(url: str, *args, is_text=False, proxy=None, **kwargs):
     async with AsyncClient(proxies=proxy) as cli:
         res = await cli.get(url, *args, **kwargs)
         return res.text if is_text else res.content
@@ -37,26 +60,26 @@ async def get_anime_pic():
             is_text=True,
             proxy=config.telegram_proxy,
             params={"proxy": 0, "excludeAI": 1, "tag": "萝莉|少女"},
-        )
+        ),
     )
     return await async_request(
-        r["data"][0]["urls"]["original"],
+        r["data"][0]["urls"]["original"],  # type: ignore  # noqa: PGH003
         proxy=config.telegram_proxy,
         headers={"referer": "https://pixiv.net/"},
     )
 
 
-async def download_file(bot: Bot, file_id: str):
+async def download_file(bot: Bot, file_id: str) -> bytes:
     res = await bot.get_file(file_id=file_id)
-    file_path = res["result"]["file_path"]
+    file_path = res.file_path
 
     url = f"https://api.telegram.org/file/bot{bot.bot_config.token}/{file_path}"
     return await async_request(url, proxy=config.telegram_proxy)
 
 
 async def get_tg_avatar(bot: Bot):
-    res = await bot.get_user_profile_photos(user_id=bot.self_id, limit=1)
-    file_id = res["result"]["photos"][0][-1]["file_id"]
+    res = await bot.get_user_profile_photos(user_id=int(bot.self_id), limit=1)
+    file_id = res.photos[0][-1].file_id
 
     return await download_file(bot, file_id)
 
@@ -88,8 +111,8 @@ async def get_system_name():
         else:
             v = v.replace(r"\n", "").replace(r"\l", "").strip()
         return f"{v} {machine}"
-    else:
-        return f"{system} {release}"
+
+    return f"{system} {release}"
 
 
 def format_byte_count(b: int):
@@ -106,3 +129,4 @@ def match_list_regexp(reg_list, txt):
     for r in reg_list:
         if m := re.search(r, txt):
             return m
+    return None

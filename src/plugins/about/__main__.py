@@ -4,8 +4,10 @@ from nonebot.matcher import Matcher
 from ..base.cmd import on_command
 from ..base.const import LINE_SEP
 
+cmd_about = on_command("about", "关于Bot")
 
-@on_command("about", "关于Bot").handle()
+
+@cmd_about.handle()
 async def _(matcher: Matcher, event: MessageEvent):
     await matcher.send(
         (

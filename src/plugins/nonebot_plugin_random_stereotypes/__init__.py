@@ -1,14 +1,13 @@
 import random
 
-from nonebot.matcher import Matcher
-from nonebot.params import CommandArg, Arg
-
 from nonebot.adapters.telegram.event import MessageEvent
 from nonebot.internal.adapter import Message
+from nonebot.matcher import Matcher
+from nonebot.params import Arg, CommandArg
 from nonebot.plugin import PluginMetadata
 
-from .data import DATA
 from ..base.cmd import on_command
+from .data import DATA
 
 __plugin_meta__ = PluginMetadata(
     name="发病语录",

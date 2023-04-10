@@ -4,12 +4,10 @@ from nonebot import logger
 from nonebot.adapters.telegram import Bot
 from nonebot.adapters.telegram.event import MessageEvent
 from nonebot.adapters.telegram.message import File
-from nonebot.internal.adapter import Message
 from nonebot.internal.matcher import Matcher
 from PIL import Image
 
-from ..base.cmd import CommandArg, on_command
-from .config import config
+from ..base.cmd import on_command
 from .draw import get_stat_pic
 from .util import download_file
 
@@ -37,7 +35,6 @@ async def _(
     bot: Bot,
     event: MessageEvent,
     matcher: Matcher,
-    arg: Message = CommandArg(),
 ):
     msg = event.message
     if event.reply_to_message and event.reply_to_message.message:
@@ -48,7 +45,7 @@ async def _(
         file_id = photos[0].data["file"]
 
     elif documents := msg["document"]:
-        for doc in msg["document"]:
+        for doc in documents:
             data = doc.data["document"]
             if data["mime_type"].startswith("image/"):
                 if data["file_size"] > 15728640:
@@ -71,4 +68,7 @@ async def _(
             reply_to_message_id=event.message_id,
         )
 
-    await matcher.finish(File.photo(ret), reply_to_message_id=event.message_id)
+    await matcher.finish(  # noqa: RET503
+        File.photo(ret),
+        reply_to_message_id=event.message_id,
+    )

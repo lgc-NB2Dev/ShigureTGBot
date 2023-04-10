@@ -2,11 +2,14 @@ from nonebot.adapters.telegram.event import CallbackQueryEvent
 from nonebot.typing import T_State
 
 
-def inline_rule(prefix):
-    def r(event: CallbackQueryEvent, state: T_State):
+def inline_rule(prefix: str):
+    async def r(event: CallbackQueryEvent, state: T_State):
+        if not event.data:
+            return False
+
         data = event.data.split("|")
         state["data"] = data
-        if data[0] == prefix:
-            return True
+
+        return bool(data and data[0] == prefix)
 
     return r

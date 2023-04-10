@@ -29,13 +29,15 @@ async def command_rule(
     state: T_State,
     arg: Message = CommandArg(),
     cmd: str = RawCommand(),
-):
+) -> bool:
     def simple_check(msg_, cmd_):
         return msg_ == cmd_ or msg_.startswith(f"{cmd_} ")
 
     msg = event.message.extract_plain_text().strip()
+
     if simple_check(msg, cmd):
         return True
+
     if isinstance(event, GroupMessageEvent):
         for u in bot_username:
             group_cmd = f"{cmd}@{u}"
@@ -52,8 +54,10 @@ async def command_rule(
                 state[PREFIX_KEY][CMD_TRUE_ARG_KEY] = arg_copy
                 return True
 
+    return False
 
-def on_command(cmd: str | tuple, desc: str, *args, hide=False, **kwargs):
+
+def on_command(cmd: str, desc: str, *args, hide=False, **kwargs):
     command_list.append(BotCommand(command=cmd, description=desc, hide=hide))
 
     if rule := kwargs.get("rule"):
@@ -61,10 +65,10 @@ def on_command(cmd: str | tuple, desc: str, *args, hide=False, **kwargs):
         kwargs.pop("rule")
     else:
         rule = command_rule
-    return raw_on_command(cmd, rule=rule, *args, **kwargs)
+    return raw_on_command(cmd, *args, rule=rule, **kwargs)
 
 
-def CommandArg():
+def CommandArg():  # noqa: N802
     """消息命令参数"""
 
     def _command_arg(state: T_State) -> Message:
@@ -82,7 +86,7 @@ def get_cmd_list_txt(show_hide=False):
             f"{prefix}{x.command} - {x.description}{'（隐藏）' if x.hide else ''}"
             for x in command_list
             if (not x.hide) or show_hide
-        ]
+        ],
     )
 
 
@@ -90,16 +94,19 @@ def get_cmd_list_txt(show_hide=False):
 async def _(bot: Bot):
     command_list.sort(key=lambda x: x.command)
 
-    bot_username.append(u := ((await bot.get_me())["result"]["username"]))
+    bot_username.append(u := (await bot.get_me()).username)
     logger.info(f"Bot {bot.self_id}(@{u}) connected")
 
     logger.info(f"Registered Commands:\n{get_cmd_list_txt(True)}")
     await bot.set_my_commands(commands=[x for x in command_list if not x.hide])
 
 
-@on_command("menu", "功能列表").handle()
+cmd_menu = on_command("menu", "功能列表")
+
+
+@cmd_menu.handle()
 async def _(matcher: Matcher, event: MessageEvent):
     await matcher.send(
-        "Shigure☆功能列表\n" f"{LINE_SEP}\n" f"{get_cmd_list_txt()}",
+        f"Shigure☆功能列表\n{LINE_SEP}\n{get_cmd_list_txt()}",
         reply_to_message_id=event.message_id,
     )

@@ -7,11 +7,13 @@ from typing import Optional, Union
 from mcstatus import BedrockServer, JavaServer
 from mcstatus.bedrock_status import BedrockStatusResponse
 from mcstatus.pinger import PingResponse
-from nonebot import get_driver, logger
-from nonebot.adapters.telegram.message import File
+from nonebot import get_driver
+from nonebot.adapters.telegram.message import File, MessageSegment
+from nonebot.log import logger
 from PIL.Image import Resampling
 from pil_utils import BuildImage, Text2Image
 
+from .config import config
 from .const import CODE_COLOR, GAME_MODE_MAP, STROKE_COLOR, ServerType
 from .res import DEFAULT_ICON_RES, DIRT_RES, GRASS_RES
 from .util import (
@@ -24,7 +26,6 @@ from .util import (
 
 MARGIN = 32
 MIN_WIDTH = 512
-FONT_NAME = "unifont"
 TITLE_FONT_SIZE = 8 * 5
 EXTRA_FONT_SIZE = 8 * 4
 EXTRA_STROKE_WIDTH = 2
@@ -60,61 +61,63 @@ def build_img(
     if not icon:
         icon = DEFAULT_ICON_RES
 
-    HEADER_TEXT_COLOR = CODE_COLOR["f"]
-    HEADER_STROKE_COLOR = STROKE_COLOR["f"]
+    header_text_color = CODE_COLOR["f"]
+    header_stroke_color = STROKE_COLOR["f"]
 
-    HEADER_HEIGHT = 128
-    HALF_HEADER_HEIGHT = int(HEADER_HEIGHT / 2)
+    header_height = 128
+    half_header_height = int(header_height / 2)
 
-    BG_WIDTH = extra.width + MARGIN * 2 if extra else MIN_WIDTH
-    BG_HEIGHT = HEADER_HEIGHT + MARGIN * 2
-    if BG_WIDTH < MIN_WIDTH:
-        BG_WIDTH = MIN_WIDTH
+    bg_width = extra.width + MARGIN * 2 if extra else MIN_WIDTH
+    bg_height = header_height + MARGIN * 2
+    if bg_width < MIN_WIDTH:
+        bg_width = MIN_WIDTH
     if extra:
-        BG_HEIGHT += extra.height + int(MARGIN / 2)
-    bg = draw_bg(BG_WIDTH, BG_HEIGHT)
+        bg_height += extra.height + int(MARGIN / 2)
+    bg = draw_bg(bg_width, bg_height)
 
-    if icon.size != (HEADER_HEIGHT, HEADER_HEIGHT):
+    if icon.size != (header_height, header_height):
         icon = icon.resize_height(
-            HEADER_HEIGHT, inside=False, resample=Resampling.NEAREST
+            header_height,
+            inside=False,
+            resample=Resampling.NEAREST,
         )
     bg.paste(icon, (MARGIN, MARGIN), alpha=True)
 
     bg.draw_text(
         (
-            HEADER_HEIGHT + MARGIN + MARGIN / 2,
+            header_height + MARGIN + MARGIN / 2,
             MARGIN - 4,
-            BG_WIDTH - MARGIN,
-            HALF_HEADER_HEIGHT + MARGIN + 4,
+            bg_width - MARGIN,
+            half_header_height + MARGIN + 4,
         ),
         header1,
         halign="left",
-        fill=HEADER_TEXT_COLOR,
+        fill=header_text_color,
         max_fontsize=TITLE_FONT_SIZE,
-        fontname=FONT_NAME,
+        fontname=config.mcstat_font,
         stroke_ratio=STROKE_RATIO,
-        stroke_fill=HEADER_STROKE_COLOR,
+        stroke_fill=header_stroke_color,
     )
     bg.draw_text(
         (
-            HEADER_HEIGHT + MARGIN + MARGIN / 2,
-            HALF_HEADER_HEIGHT + MARGIN - 4,
-            BG_WIDTH - MARGIN,
-            HEADER_HEIGHT + MARGIN + 4,
+            header_height + MARGIN + MARGIN / 2,
+            half_header_height + MARGIN - 4,
+            bg_width - MARGIN,
+            header_height + MARGIN + 4,
         ),
         header2,
         halign="left",
-        fill=HEADER_TEXT_COLOR,
+        fill=header_text_color,
         max_fontsize=TITLE_FONT_SIZE,
-        fontname=FONT_NAME,
+        fontname=config.mcstat_font,
         stroke_ratio=STROKE_RATIO,
-        stroke_fill=HEADER_STROKE_COLOR,
+        stroke_fill=header_stroke_color,
     )
 
     if extra:
         extra.draw_on_image(
             bg.image,
-            (MARGIN, int(HEADER_HEIGHT + MARGIN + MARGIN / 2)),
+            (MARGIN, int(header_height + MARGIN + MARGIN / 2)),
         )
 
     return bg.convert("RGB").save("PNG")
@@ -125,7 +128,7 @@ def format_extra(extra: str) -> Text2Image:
         format_code_to_bbcode(extra),
         EXTRA_FONT_SIZE,
         fill=CODE_COLOR["f"],
-        fontname=FONT_NAME,
+        fontname=config.mcstat_font,
         stroke_ratio=STROKE_RATIO,
         stroke_fill=STROKE_COLOR["f"],
         spacing=EXTRA_SPACING,
@@ -166,7 +169,7 @@ def draw_java(res: PingResponse) -> BytesIO:
 
         if tmp := mod_info.get("modList"):
             mod_total = f"§7Mod总数: §f{len(tmp)}\n"
-            mod_list = f"§7Mod列表: §f{format_list(tmp)}\n"  # type: ignore
+            mod_list = f"§7Mod列表: §f{format_list(tmp)}\n"
 
     extra_txt = (
         f"{motd}§r\n"
@@ -219,15 +222,14 @@ def draw_error(e: Exception, svr_type: ServerType) -> BytesIO:
         reason = "出错了！"
         extra = repr(e)
 
-    if extra:
-        extra = format_extra(extra).wrap(MIN_WIDTH - MARGIN * 2)
+    extra_img = format_extra(extra).wrap(MIN_WIDTH - MARGIN * 2) if extra else None
 
-    return build_img(get_header_by_svr_type(svr_type), reason, extra)
+    return build_img(get_header_by_svr_type(svr_type), reason, extra_img)
 
 
-async def draw(ip: str, svr_type: ServerType) -> Union[File, str]:
+async def draw(ip: str, svr_type: ServerType) -> Union[MessageSegment, str]:
     if svr_type not in ("je", "be"):
-        raise ValueError("Server type must be `je` or `be`")
+        raise ValueError("Server type must be `je` or `be`")  # noqa: TRY003
 
     try:
         if not ip:
@@ -236,13 +238,13 @@ async def draw(ip: str, svr_type: ServerType) -> Union[File, str]:
         if svr_type == "je":
             return File.photo(
                 draw_java(
-                    await (await JavaServer.async_lookup(ip)).async_status()
-                ).getvalue()
+                    await (await JavaServer.async_lookup(ip)).async_status(),
+                ).getvalue(),
             )
-        else:  # be
-            return File.photo(
-                draw_bedrock(await BedrockServer.lookup(ip).async_status()).getvalue()
-            )
+
+        return File.photo(
+            draw_bedrock(await BedrockServer.lookup(ip).async_status()).getvalue(),
+        )
     except Exception as e:
         logger.exception("获取服务器状态/画服务器状态图出错")
         try:

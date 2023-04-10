@@ -10,7 +10,14 @@ from nonebot import on
 from nonebot.adapters.telegram import Bot, Message
 from nonebot.adapters.telegram.event import CallbackQueryEvent, MessageEvent
 from nonebot.adapters.telegram.exception import NetworkError
-from nonebot.adapters.telegram.model import InlineKeyboardButton, InlineKeyboardMarkup
+from nonebot.adapters.telegram.model import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+)
+from nonebot.adapters.telegram.model import (
+    Message as MessageModel,
+)
+from nonebot.log import logger
 from nonebot.matcher import Matcher
 from nonebot.permission import SUPERUSER
 from nonebot.typing import T_State
@@ -19,8 +26,14 @@ from ..base.cmd import CommandArg, on_command
 from ..base.const import LINE_SEP
 from ..base.rule import inline_rule
 from ..cache import PluginCache
-from .config import data
-from .data_source import *
+from .config import config, data
+from .data_source import (
+    GetCurrentSession,
+    get_track_audio,
+    get_track_info,
+    login,
+    search,
+)
 
 asyncio.get_event_loop().run_until_complete(login())
 
@@ -31,15 +44,21 @@ def get_random_str(length: int = 6):
     return "".join(random.sample(f"{string.ascii_letters}{string.digits}", length))
 
 
-@on_command("netease", "网易云音乐点歌").handle()
+cmd_netease = on_command("netease", "网易云音乐点歌")
+
+
+@cmd_netease.handle()
 async def _(
-    bot: Bot, matcher: Matcher, event: MessageEvent, arg: Message = CommandArg()
+    bot: Bot,
+    matcher: Matcher,
+    event: MessageEvent,
+    arg: Message = CommandArg(),
 ):
-    arg = arg.extract_plain_text().strip()
-    if not arg:
+    str_arg = arg.extract_plain_text().strip()
+    if not str_arg:
         logged_in = GetCurrentSession().login_info["success"]
         login_warn = "警告！帐号未登录，功能将会受到限制\n" if not logged_in else ""
-        return await matcher.finish(
+        await matcher.finish(
             f"{login_warn}"
             "用法：/netease <歌曲名>\n"
             "可以听需要会员的歌曲（黑胶为自费）\n"
@@ -47,18 +66,23 @@ async def _(
             reply_to_message_id=event.message_id,
         )
 
-    msg_id = (await matcher.send("搜索中……", reply_to_message_id=event.message_id))[
-        "result"
-    ]["message_id"]
+    msg_sent: MessageModel = await matcher.send(
+        "搜索中……",
+        reply_to_message_id=event.message_id,
+    )
+    msg_id = msg_sent.message_id
 
-    tmp_search[salt := get_random_str()] = arg
+    tmp_search[salt := get_random_str()] = str_arg
     await edit_search_music_msg(bot, msg_id, event.chat.id, salt)
 
 
 async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     async def edit_message_text(text, **kwargs):
         return await bot.edit_message_text(
-            text=text, message_id=msg_id, chat_id=chat_id, **kwargs
+            text=text,
+            message_id=msg_id,
+            chat_id=chat_id,
+            **kwargs,
         )
 
     arg = tmp_search[salt]
@@ -90,8 +114,9 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
         music_li.append(f'{num}. <b>{song["name"]}</b>{alia} - {ars}')
         tmp_row.append(
             InlineKeyboardButton(
-                text=str(num), callback_data=f'netease|music|get|{song["id"]}'
-            )
+                text=str(num),
+                callback_data=f'netease|music|get|{song["id"]}',
+            ),
         )
 
         if len(tmp_row) == row_width or i == limit - 1:
@@ -101,14 +126,16 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     if page != 1:
         tmp_row.append(
             InlineKeyboardButton(
-                text="< 上一页", callback_data=f"netease|music|page|{salt}|{page - 1}"
-            )
+                text="< 上一页",
+                callback_data=f"netease|music|page|{salt}|{page - 1}",
+            ),
         )
     if page != max_page:
         tmp_row.append(
             InlineKeyboardButton(
-                text="下一页 >", callback_data=f"netease|music|page|{salt}|{page + 1}"
-            )
+                text="下一页 >",
+                callback_data=f"netease|music|page|{salt}|{page + 1}",
+            ),
         )
     inline_buttons.append(tmp_row.copy())
     tmp_row.clear()
@@ -127,17 +154,22 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
         parse_mode="HTML",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_buttons),
     )
+    return None
 
 
 async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
     async def edit_message_text(text, **kwargs):
         return await bot.edit_message_text(
-            text=text, message_id=msg_id, chat_id=chat_id, **kwargs
+            text=text,
+            message_id=msg_id,
+            chat_id=chat_id,
+            **kwargs,
         )
 
     # 获取歌曲信息
     await edit_message_text(
-        "获取歌曲详细信息中……", reply_markup=InlineKeyboardMarkup(inline_keyboard=[])
+        "获取歌曲详细信息中……",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[]),
     )
     try:
         ret_info = await get_track_info([music_id])
@@ -166,7 +198,8 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
         await edit_message_text("获取歌曲下载链接中……")
         try:
             ret_down = await get_track_audio(
-                [int(music_id)], bit_rate=info_privilege["maxbr"]
+                [int(music_id)],
+                bit_rate=info_privilege["maxbr"],
             )
         except:
             logger.exception("获取歌曲下载链接失败")
@@ -183,10 +216,10 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
 
         # 处理
         await edit_message_text("下载歌曲中……")
-        too_large = info_down["size"] > 50 * 1024 * 1024
+        too_large: bool = info_down["size"] > 50 * 1024 * 1024
         if not too_large:
             cache = PluginCache(
-                f"{song_name} - {performer}{os.path.splitext(audio_url)[-1]}"
+                f"{song_name} - {performer}{os.path.splitext(audio_url)[-1]}",  # noqa: PTH122
             )
             async with ClientSession() as s:
                 async with s.get(audio_url) as r:
@@ -200,7 +233,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
     msg.append(f'《<b>{escape(info_song["name"])}</b>》')
     if alia := info_song["alia"]:
         msg.append("\n".join([f"<i>{escape(x)}</i>" for x in alia]))
-    if too_large:
+    if not audio_file:
         msg.append(f'\n文件超过50MB，无法上传，请点击<a href="{audio_url}">这里</a>收听')
     msg.append("\nvia @shiguretgbot")
     msg = "\n".join(msg)
@@ -210,62 +243,71 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text=f'歌手：{ar["name"]}', callback_data=f'netease|ar|{ar["id"]}|1'
-                )
-            ]
+                    text=f'歌手：{ar["name"]}',
+                    callback_data=f'netease|ar|{ar["id"]}|1',
+                ),
+            ],
         )
     al = info_song["al"]
     buttons.append(
         [
             InlineKeyboardButton(
-                text=f'专辑：{al["name"]}', callback_data=f'netease|al|{al["id"]}|1'
-            )
-        ]
+                text=f'专辑：{al["name"]}',
+                callback_data=f'netease|al|{al["id"]}|1',
+            ),
+        ],
     )
     buttons.append(
         [
             InlineKeyboardButton(
-                text="歌词", callback_data=f"netease|music|lrc|{music_id}|1"
+                text="歌词",
+                callback_data=f"netease|music|lrc|{music_id}|1",
             ),
             InlineKeyboardButton(
-                text="评论", callback_data=f"netease|music|comment|{music_id}|1"
+                text="评论",
+                callback_data=f"netease|music|comment|{music_id}|1",
             ),
-        ]
+        ],
     )
 
     markup = InlineKeyboardMarkup(inline_keyboard=buttons)
-    if too_large:
+    if not audio_file:
         await edit_message_text(msg, parse_mode="HTML", reply_markup=markup)
-    else:
-        try:
-            await edit_message_text("上传文件中……")
+        return None
 
-            msg += (
-                "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
+    try:
+        await edit_message_text("上传文件中……")
+
+        msg += "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
+        ret = (
+            await bot.send_audio(
+                thumbnail=info_song["al"]["picUrl"],
+                audio=audio_file,
+                chat_id=chat_id,
+                reply_markup=markup,
+                title=song_name,
+                caption=msg,
+                parse_mode="HTML",
+                performer=performer,
+                reply_to_message_id=reply_to_id,
             )
-            ret = (
-                await bot.send_audio(
-                    thumb=info_song["al"]["picUrl"],
-                    audio=audio_file,
-                    chat_id=chat_id,
-                    reply_markup=markup,
-                    title=song_name,
-                    caption=msg,
-                    parse_mode="HTML",
-                    performer=performer,
-                    reply_to_message_id=reply_to_id,
-                )
-            )["result"]["audio"]["file_id"]
-            await data.set(str(music_id), ret)
-            await bot.delete_message(chat_id=chat_id, message_id=msg_id)
-        except NetworkError as e:
-            logger.opt(exception=e).exception("文件上传失败")
-            msg += f'\n文件上传失败，请点击<a href="{audio_url}">这里</a>收听'
+        ).audio.file_id  # type: ignore  # noqa: PGH003
+        await data.set(str(music_id), ret)
+        await bot.delete_message(chat_id=chat_id, message_id=msg_id)
+    except NetworkError as e:
+        logger.opt(exception=e).exception("文件上传失败")
+        msg += f'\n文件上传失败，请点击<a href="{audio_url}">这里</a>收听'
 
 
-@on("", rule=inline_rule("netease")).handle()
+inline_netease = on("", rule=inline_rule("netease"))
+
+
+@inline_netease.handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
     async def process():
+        if not event.message:
+            return False
+
         s_data = state["data"]
         match s_data[1]:
             case "music":
@@ -278,16 +320,19 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
                             s_data[3],
                             int(s_data[4]),
                         )
-                        return 1
+                        return True
                     case "get":
-                        await get_music(
-                            bot,
-                            int(s_data[3]),
-                            event.message.message_id,
-                            event.message.chat.id,
-                            event.message.reply_to_message.message_id,
-                        )
-                        return 1
+                        if event.message.reply_to_message:
+                            await get_music(
+                                bot,
+                                int(s_data[3]),
+                                event.message.message_id,
+                                event.message.chat.id,
+                                event.message.reply_to_message.message_id,
+                            )
+                            return True
+
+        return False
 
     if not (await process()):
         await bot.answer_callback_query(callback_query_id=event.id, text="待更新")
@@ -295,14 +340,23 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
         await bot.answer_callback_query(callback_query_id=event.id)
 
 
-@on_command("netease_relogin", "网易云重登", hide=True, permission=SUPERUSER).handle()
+cmd_relogin = on_command("netease_relogin", "网易云重登", hide=True, permission=SUPERUSER)
+
+
+@cmd_relogin.handle()
 async def _(matcher: Matcher, bot: Bot, event: MessageEvent):
-    msg_id = (await matcher.send("重新登录中……", reply_to_message_id=event.message_id))[
-        "result"
-    ]["message_id"]
-    ret = await login()
+    msg_sent: MessageModel = await matcher.send(
+        "重新登录中……",
+        reply_to_message_id=event.message_id,
+    )
+    msg_id = msg_sent.message_id
+
+    ret = await login(bot, event.chat.id)
     if isinstance(ret, Exception):
         return await bot.edit_message_text(
-            chat_id=event.chat.id, message_id=msg_id, text=f"登录失败\n{ret!r}"
+            chat_id=event.chat.id,
+            message_id=msg_id,
+            text=f"登录失败\n{ret!r}",
         )
     await bot.edit_message_text(chat_id=event.chat.id, message_id=msg_id, text="登录成功")
+    return None

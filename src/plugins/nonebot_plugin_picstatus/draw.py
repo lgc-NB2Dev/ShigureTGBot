@@ -4,15 +4,15 @@ import random
 import time
 from datetime import datetime
 from io import BytesIO
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, cast
 
 import nonebot
 import psutil
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
 from aiohttp import ClientConnectorError, ClientSession, ClientTimeout
 from nonebot import logger
 from nonebot.adapters.telegram import Bot
-from psutil._common import sdiskio, sdiskusage, snetio  # noqa
+from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from psutil._common import sdiskio, sdiskusage, snetio
 
 from .config import TestSiteCfg, config
 from .const import DEFAULT_AVATAR_PATH, DEFAULT_BG_PATH, DEFAULT_FONT_PATH
@@ -27,13 +27,13 @@ from .util import (
     format_byte_count,
     format_timedelta,
     get_anime_pic,
-    get_tg_avatar,
     get_system_name,
+    get_tg_avatar,
     match_list_regexp,
 )
 from .version import __version__
 
-GRAY_BG_COLOR = "#aaaaaaaa"
+GRAY_BG_COLOR: str = "#aaaaaaaa"
 WHITE_BG_COLOR = config.ps_bg_color
 WHITE_MASK_COLOR = config.ps_mask_color
 
@@ -53,10 +53,9 @@ def get_usage_color(usage: float):
     usage = round(usage)
     if usage >= 90:
         return "orangered"
-    elif usage >= 70:
+    if usage >= 70:
         return "orange"
-    else:
-        return "lightgreen"
+    return "lightgreen"
 
 
 async def draw_header(bot: Bot):
@@ -75,7 +74,7 @@ async def draw_header(bot: Bot):
     nick = (
         list(config.nickname)[0]
         if (config.ps_use_env_nick and config.nickname)
-        else (await bot.get_me())["result"]["first_name"]
+        else (await bot.get_me()).first_name
     )
     # bot_connected = (
     #     format_timedelta(datetime.now() - t)
@@ -90,7 +89,7 @@ async def draw_header(bot: Bot):
 
     # 系统启动时间
     booted = format_timedelta(
-        datetime.now() - datetime.fromtimestamp(psutil.boot_time())
+        datetime.now() - datetime.fromtimestamp(psutil.boot_time()),
     )
 
     font_30 = get_font(30)
@@ -313,7 +312,7 @@ async def draw_disk_usage():
 
     # 列表为空直接返回
     if not (disks or io_rw):
-        return
+        return None
 
     # 计算图片高度，创建背景图
     count = len(disks) + len(io_rw)
@@ -336,7 +335,9 @@ async def draw_disk_usage():
     if disks:
         max_len = 990 - (50 + left_padding)  # 进度条长度
 
-        its: List[Tuple[str, Union[sdiskusage, Exception]]] = disks.items()  # noqa
+        its: List[
+            Tuple[str, Union[sdiskusage, Exception]]
+        ] = disks.items()  # type: ignore  # noqa: PGH003
         for name, usage in its:
             fail = isinstance(usage, Exception)
 
@@ -429,11 +430,12 @@ async def draw_net_io():
         async def get_result(site: TestSiteCfg):
             try:
                 async with ClientSession(
-                    timeout=ClientTimeout(total=config.ps_test_timeout)
+                    timeout=ClientTimeout(total=config.ps_test_timeout),
                 ) as c:
                     time1 = time.time()
                     async with c.get(
-                        site.url, proxy=config.proxy if site.use_proxy else None
+                        site.url,
+                        proxy=config.proxy if site.use_proxy else None,
                     ) as r:
                         time2 = time.time() - time1
                         connections.append((site.name, (r.status, time2 * 1000)))
@@ -521,20 +523,15 @@ async def draw_footer(img: Image.Image):
     )
 
 
-async def get_bg(pic: Union[str, Image.Image] = None) -> Image.Image:
+async def get_bg(pic: Optional[Union[str, Image.Image]] = None) -> Image.Image:
     if config.ps_custom_bg and (not pic):
         pic = random.choice(config.ps_custom_bg)
 
-    if pic:
+    if isinstance(pic, str):
         try:
-            if isinstance(pic, str):
-                if pic.startswith("file:///"):
-                    return await async_open_img(pic.replace("file:///", "", 1))
-                else:
-                    pic = await async_request(pic)
-                return Image.open(pic)
-
-            return pic
+            if pic.startswith("file:///"):
+                return await async_open_img(pic.replace("file:///", "", 1))
+            return Image.open(await async_request(pic))
         except:
             logger.exception("下载/打开自定义背景图失败，使用随机背景图")
 
@@ -546,19 +543,19 @@ async def get_bg(pic: Union[str, Image.Image] = None) -> Image.Image:
     return await async_open_img(DEFAULT_BG_PATH)
 
 
-async def get_stat_pic(bot: Bot, bg: Image.Image = None):
+async def get_stat_pic(bot: Bot, bg_arg: Optional[Image.Image] = None):
     img_w = 1300
     img_h = 50  # 这里是上边距，留给下面代码统计图片高度
 
     # 获取背景及各模块图片
-    ret: List[Optional[Image.Image]] = await asyncio.gather(  # noqa
-        get_bg(bg),
+    ret: List[Optional[Image.Image]] = await asyncio.gather(  # type: ignore  # noqa: PGH003
+        get_bg(bg_arg),
         draw_header(bot),
         draw_cpu_memory_usage(),
         draw_disk_usage(),
         draw_net_io(),
     )
-    bg = ret[0]
+    bg = cast(Image.Image, ret[0])
     ret = ret[1:]
 
     # 统计图片高度

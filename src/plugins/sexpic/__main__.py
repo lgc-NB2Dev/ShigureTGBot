@@ -1,4 +1,5 @@
 from html import escape
+from typing import cast
 
 import aiohttp
 from nonebot import get_driver, logger, on
@@ -14,11 +15,17 @@ from ..cache import PluginCache
 
 config = get_driver().config
 
+cmd_sexpic = on_command("sexpic_r18", "不够涩！！我要更涩的！！！")
+cmd_sexr18 = on_command("sexpic", "涩图！我要涩涩！！")
 
-@on_command("sexpic_r18", "不够涩！！我要更涩的！！！").handle()
-@on_command("sexpic", "涩图！我要涩涩！！").handle()
+
+@cmd_sexpic.handle()
+@cmd_sexr18.handle()
 async def _(
-    bot: Bot, event: MessageEvent, arg: Message = CommandArg(), cmd: str = RawCommand()
+    bot: Bot,
+    event: MessageEvent,
+    arg: Message = CommandArg(),
+    cmd: str = RawCommand(),
 ):
     await get_setu(
         bot,
@@ -33,17 +40,23 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
     tag = [xx for x in arg.split(" ") if (xx := x.strip())]
     if len(tag) > 3:
         return await bot.send_message(
-            chat_id=chat_id, text="and规则的tag匹配数不能超过3个", reply_to_message_id=reply_to
+            chat_id=chat_id,
+            text="and规则的tag匹配数不能超过3个",
+            reply_to_message_id=reply_to,
         )
     for i in tag:
         if len(i.split("|")) > 20:
             return await bot.send_message(
-                chat_id=chat_id, text="or规则的tag匹配数不能超过20个", reply_to_message_id=reply_to
+                chat_id=chat_id,
+                text="or规则的tag匹配数不能超过20个",
+                reply_to_message_id=reply_to,
             )
 
     msg_id = (
         await bot.send_message(
-            chat_id=chat_id, text="正在取得涩图信息~", reply_to_message_id=reply_to
+            chat_id=chat_id,
+            text="正在取得涩图信息~",
+            reply_to_message_id=reply_to,
         )
     )["result"]["message_id"]
 
@@ -57,13 +70,18 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
     except:
         logger.exception("获取涩图URL失败")
         await bot.edit_message_text(
-            chat_id=chat_id, message_id=msg_id, text="啊呜……获取涩图信息失败惹……"
+            chat_id=chat_id,
+            message_id=msg_id,
+            text="啊呜……获取涩图信息失败惹……",
         )
+        return None
 
     ret = ret["data"]
     if not ret:
         return await bot.edit_message_text(
-            chat_id=chat_id, message_id=msg_id, text="没有找到符合要求的图片捏"
+            chat_id=chat_id,
+            message_id=msg_id,
+            text="没有找到符合要求的图片捏",
         )
     ret = ret[0]
 
@@ -72,7 +90,7 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         search_tags.extend(t.split("|"))
 
     pic_tags = []
-    for t in ret["tags"]:  # type:str
+    for t in cast(list[str], ret["tags"]):
         find = False
         et = escape(t)
         for tt in search_tags:
@@ -96,9 +114,9 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
                 InlineKeyboardButton(
                     text="社保了！多来点！！" if r18 else "不够涩！我还要！！",
                     callback_data=f"sexpic|more|{' '.join(tag)}|{r18}",
-                )
-            ]
-        ]
+                ),
+            ],
+        ],
     )
 
     await bot.edit_message_text(chat_id=chat_id, message_id=msg_id, text="下载涩图中……")
@@ -147,8 +165,14 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         await bot.delete_message(message_id=msg_id, chat_id=chat_id)
 
 
-@on("", rule=inline_rule("sexpic")).handle()
+inline_sexpic = on("", rule=inline_rule("sexpic"))
+
+
+@inline_sexpic.handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
+    if not event.message:
+        return
+
     data = state["data"]
     arg = "|".join(data[2:-1])
     r18 = int(data[-1])

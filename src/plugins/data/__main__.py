@@ -20,8 +20,12 @@ class PluginData:
     def get(self, name, default=None):
         return self.data.get(name, default)
 
-    async def set(self, name, value):
+    async def set(self, name, value):  # noqa: A003
         self.data[name] = value
+        await self.save()
+
+    async def delete(self, name):
+        del self.data[name]
         await self.save()
 
     async def save(self):
