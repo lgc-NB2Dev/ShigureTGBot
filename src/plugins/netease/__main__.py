@@ -278,7 +278,7 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
     try:
         await edit_message_text("上传文件中……")
 
-        msg += "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
+        # msg += "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
         ret = (
             await bot.send_audio(
                 thumbnail=info_song["al"]["picUrl"],
