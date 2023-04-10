@@ -88,16 +88,17 @@ async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
     arg = tmp_search[salt]
     try:
         ret = await search(arg, page=page)
+        # print(ret)
     except:
         logger.exception("歌曲搜索失败")
         return await edit_message_text("歌曲搜索失败，请重试")
 
-    if ret["code"] != 200:
-        return await edit_message_text(f'未知错误({ret["code"]})')
+    # if ret["code"] != 200:
+    #     return await edit_message_text(f'未知错误({ret["code"]})')
 
     ret = ret["result"]
-    if not ret.get("songs"):
-        return await edit_message_text("未搜索到歌曲")
+    if not (ret and ret.get("songs")):
+        return await edit_message_text("未搜索到歌曲 / 搜索出错")
 
     inline_buttons = []
     tmp_row = []
@@ -304,40 +305,34 @@ inline_netease = on("", rule=inline_rule("netease"))
 
 @inline_netease.handle()
 async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
-    async def process():
-        if not event.message:
-            return False
+    if not event.message:
+        return
 
-        s_data = state["data"]
-        match s_data[1]:
-            case "music":
-                match s_data[2]:
-                    case "page":
-                        await edit_search_music_msg(
+    s_data = state["data"]
+    match s_data[1]:
+        case "music":
+            match s_data[2]:
+                case "page":
+                    await bot.answer_callback_query(callback_query_id=event.id)
+                    await edit_search_music_msg(
+                        bot,
+                        event.message.message_id,
+                        event.message.chat.id,
+                        s_data[3],
+                        int(s_data[4]),
+                    )
+                case "get":
+                    if event.message.reply_to_message:
+                        await bot.answer_callback_query(callback_query_id=event.id)
+                        await get_music(
                             bot,
+                            int(s_data[3]),
                             event.message.message_id,
                             event.message.chat.id,
-                            s_data[3],
-                            int(s_data[4]),
+                            event.message.reply_to_message.message_id,
                         )
-                        return True
-                    case "get":
-                        if event.message.reply_to_message:
-                            await get_music(
-                                bot,
-                                int(s_data[3]),
-                                event.message.message_id,
-                                event.message.chat.id,
-                                event.message.reply_to_message.message_id,
-                            )
-                            return True
 
-        return False
-
-    if not (await process()):
-        await bot.answer_callback_query(callback_query_id=event.id, text="待更新")
-    else:
-        await bot.answer_callback_query(callback_query_id=event.id)
+    await bot.answer_callback_query(callback_query_id=event.id, text="待更新")
 
 
 cmd_relogin = on_command("netease_relogin", "网易云重登", hide=True, permission=SUPERUSER)
