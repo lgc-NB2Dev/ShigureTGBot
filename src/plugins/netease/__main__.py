@@ -1,6 +1,5 @@
 import asyncio
 import math
-import os.path
 import random
 import string
 from html import escape
@@ -25,7 +24,6 @@ from nonebot.typing import T_State
 from ..base.cmd import CommandArg, on_command
 from ..base.const import LINE_SEP
 from ..base.rule import inline_rule
-from ..cache import PluginCache
 from .config import config, data
 from .data_source import (
     GetCurrentSession,
@@ -176,13 +174,16 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
         ret_info = await get_track_info([music_id])
     except:
         logger.exception("获取歌曲详细信息失败")
-        return await edit_message_text("获取歌曲详细信息失败，请重试")
+        await edit_message_text("获取歌曲详细信息失败，请重试")
+        return
 
     if ret_info["code"] != 200:
-        return await edit_message_text(f'未知错误({ret_info["code"]})')
+        await edit_message_text(f'未知错误({ret_info["code"]})')
+        return
 
     if not ret_info["songs"]:
-        return await edit_message_text("未找到歌曲")
+        await edit_message_text("未找到歌曲")
+        return
     info_song = ret_info["songs"][0]
     info_privilege = ret_info["privileges"][0]
 
@@ -190,10 +191,10 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
     performer = "、".join([x["name"] for x in info_song["ar"]])
 
     too_large = False
-    if file_id := data.get(str(music_id)):
-        await edit_message_text("命中本地缓存，正在发送……")
+    cached_file = data.get(str(music_id))
+    if cached_file:
         audio_url = f"https://music.163.com/#/song?id={music_id}"
-        audio_file = file_id
+        audio_file = cached_file
     else:
         # 获取歌曲下载链接
         await edit_message_text("获取歌曲下载链接中……")
@@ -204,14 +205,18 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
             )
         except:
             logger.exception("获取歌曲下载链接失败")
-            return await edit_message_text("获取歌曲下载链接失败，请重试")
+            await edit_message_text("获取歌曲下载链接失败，请重试")
+            return
 
         if ret_down["code"] != 200:
-            return await edit_message_text(f'未知错误({ret_down["code"]})')
+            await edit_message_text(f'未知错误({ret_down["code"]})')
+            return
 
         ret_down = ret_down["data"]
         if (not ret_down) or (not ret_down[0]["url"]):
-            return await edit_message_text("未找到歌曲/歌曲没有下载链接")
+            await edit_message_text("未找到歌曲/歌曲没有下载链接")
+            return
+
         info_down = ret_down[0]
         audio_url = info_down["url"]
 
@@ -223,23 +228,42 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
             else info_down["size"] > 50 * 1024 * 1024
         )
         if not too_large:
-            cache = PluginCache(
-                f"{song_name} - {performer}{os.path.splitext(audio_url)[-1]}",  # noqa: PTH122
-            )
-            async with ClientSession() as s:
-                async with s.get(audio_url) as r:
-                    await cache.set_bytes(await r.read())
-
-            audio_file = cache.get_path()
+            try:
+                async with ClientSession() as s:
+                    async with s.get(audio_url) as r:
+                        audio_file = await r.read()
+            except:
+                logger.exception("下载歌曲失败")
+                await edit_message_text("抱歉……下载歌曲失败，请稍后重试！")
+                return
         else:
             audio_file = None
 
+    await edit_message_text("下载封面中……")
+    thumbnail = None
+    try:
+        async with ClientSession() as s:
+            async with s.get(
+                info_song["al"]["picUrl"],
+                params={"imageView": "", "thumbnail": "320y320", "type": "jpeg"},
+            ) as r:
+                thumbnail = await r.read()
+    except:
+        logger.exception("下载封面失败")
+
     msg = []
-    msg.append(f'《<b>{escape(info_song["name"])}</b>》')
+    if not thumbnail:
+        msg.append("<i>歌曲封面下载失败</i>\n")
+
+    msg.append(f'<b>{escape(info_song["name"])}</b> - {escape(performer)}')
+
     if alia := info_song["alia"]:
+        msg.append("")
         msg.append("\n".join([f"<i>{escape(x)}</i>" for x in alia]))
+
     if not audio_file:
         msg.append(f'\n文件超过50MB，无法上传，请点击<a href="{audio_url}">这里</a>收听')
+
     msg.append("\nvia @shiguretgbot")
     msg = "\n".join(msg)
 
@@ -274,19 +298,17 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
             ),
         ],
     )
-
     markup = InlineKeyboardMarkup(inline_keyboard=buttons)
+
     if not audio_file:
         await edit_message_text(msg, parse_mode="HTML", reply_markup=markup)
-        return None
+        return
 
     try:
-        await edit_message_text("上传文件中……")
-
-        # msg += "\n\n<i>注：由于nonebot-adapter-telegram的一个问题，下面的按钮点击是没反应的，等bug修了再接着做</i>"
+        await edit_message_text("命中本地缓存，正在发送……" if cached_file else "上传文件中……")
         ret = (
             await bot.send_audio(
-                thumbnail=info_song["al"]["picUrl"],
+                thumbnail=thumbnail,
                 audio=audio_file,
                 chat_id=chat_id,
                 reply_markup=markup,
