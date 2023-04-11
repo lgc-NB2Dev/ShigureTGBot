@@ -48,7 +48,7 @@ async def _(
         for doc in documents:
             data = doc.data["document"]
             if data["mime_type"].startswith("image/"):
-                if data["file_size"] > 15728640:
+                if data["file_size"] > (15 * 1024 * 1024):
                     await matcher.send(
                         "背景图需要<=15MB，忽略自定义背景图",
                         reply_to_message_id=event.message_id,

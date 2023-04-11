@@ -1,9 +1,10 @@
 import json
+import os
 import platform
 import re
 from datetime import timedelta
 from io import BytesIO
-from typing import Literal, Optional, overload
+from typing import Literal, Optional, cast, overload
 
 import aiofiles
 from httpx import AsyncClient
@@ -71,9 +72,13 @@ async def get_anime_pic():
 
 async def download_file(bot: Bot, file_id: str) -> bytes:
     res = await bot.get_file(file_id=file_id)
-    file_path = res.file_path
+    file_path = cast(str, res.file_path)
 
-    url = f"https://api.telegram.org/file/bot{bot.bot_config.token}/{file_path}"
+    if os.path.exists(file_path):  # noqa: PTH110
+        async with aiofiles.open(file_path, "rb") as f:
+            return await f.read()
+
+    url = f"{bot.bot_config.api_server}file/bot{bot.bot_config.token}/{file_path}"
     return await async_request(url, proxy=config.proxy)
 
 
