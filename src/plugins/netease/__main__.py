@@ -217,7 +217,11 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
 
         # 处理
         await edit_message_text("下载歌曲中……")
-        too_large: bool = info_down["size"] > 50 * 1024 * 1024
+        too_large: bool = (
+            False
+            if config.netease_ignore_size
+            else info_down["size"] > 50 * 1024 * 1024
+        )
         if not too_large:
             cache = PluginCache(
                 f"{song_name} - {performer}{os.path.splitext(audio_url)[-1]}",  # noqa: PTH122

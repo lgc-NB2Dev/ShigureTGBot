@@ -6,6 +6,7 @@ from nonebot import get_driver, logger, on
 from nonebot.adapters.telegram import Bot, Message
 from nonebot.adapters.telegram.event import CallbackQueryEvent, MessageEvent
 from nonebot.adapters.telegram.model import InlineKeyboardButton, InlineKeyboardMarkup
+from nonebot.adapters.telegram.model import Message as MessageModel
 from nonebot.params import RawCommand
 from nonebot.typing import T_State
 
@@ -52,13 +53,14 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
                 reply_to_message_id=reply_to,
             )
 
-    msg_id = (
+    msg_id = cast(
+        MessageModel,
         await bot.send_message(
             chat_id=chat_id,
             text="正在取得涩图信息~",
             reply_to_message_id=reply_to,
-        )
-    )["result"]["message_id"]
+        ),
+    ).message_id
 
     try:
         async with aiohttp.ClientSession() as session:

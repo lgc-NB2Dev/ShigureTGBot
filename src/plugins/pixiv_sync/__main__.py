@@ -71,20 +71,22 @@ async def _1(bot: Bot, matcher: Matcher, event: MessageEvent, state: T_State):
             )
 
     state["old_msg_id"] = (
-        await matcher.send(
-            (
-                "[PixivSync] 请登录\n"
-                f'<a href="{await api.login_web_part1()}">登录链接</a>\n'
-                "请直接将Auth Token发给我\n"
-                f'<a href="https://gist.github.com/ZipFile/c9ebedb224406f4f11845ab700124362">登录教程</a>'
+        cast(
+            MessageModel,
+            await matcher.send(
+                (
+                    "[PixivSync] 请登录\n"
+                    f'<a href="{await api.login_web_part1()}">登录链接</a>\n'
+                    "请直接将Auth Token发给我\n"
+                    f'<a href="https://gist.github.com/ZipFile/c9ebedb224406f4f11845ab700124362">登录教程</a>'
+                ),
+                parse_mode="HTML",
+                reply_to_message_id=event.message_id,
+                disable_web_page_preview=True,
             ),
-            parse_mode="HTML",
-            reply_to_message_id=event.message_id,
-            disable_web_page_preview=True,
         )
-    )["result"]["message_id"]
-    await matcher.pause()
-    return None
+    ).message_id
+    await matcher.pause()  # noqa: RET503
 
 
 @handler.handle()

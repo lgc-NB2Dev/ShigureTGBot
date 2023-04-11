@@ -16,6 +16,7 @@ class Config(BaseSettings):
     netease_login: bool = True
     netease_fake_ip: bool | str = False
     netease_ct_code: int = 86
+    netease_ignore_size: bool = False
 
     class Config:
         extra = "ignore"
