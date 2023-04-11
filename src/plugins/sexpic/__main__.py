@@ -2,7 +2,7 @@ from html import escape
 from typing import cast
 
 import aiohttp
-from nonebot import get_driver, logger, on
+from nonebot import logger, on
 from nonebot.adapters.telegram import Bot, Message
 from nonebot.adapters.telegram.event import CallbackQueryEvent, MessageEvent
 from nonebot.adapters.telegram.model import InlineKeyboardButton, InlineKeyboardMarkup
@@ -13,8 +13,7 @@ from nonebot.typing import T_State
 from ..base.cmd import CommandArg, on_command
 from ..base.rule import inline_rule
 from ..cache import PluginCache
-
-config = get_driver().config
+from .config import config
 
 cmd_sexpic = on_command("sexpic_r18", "不够涩！！我要更涩的！！！")
 cmd_sexr18 = on_command("sexpic", "涩图！我要涩涩！！")
@@ -66,6 +65,7 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 "https://api.lolicon.app/setu/v2",
+                proxy=config.proxy,
                 json={"proxy": 0, "num": 1, "tag": tag, "r18": r18},
             ) as response:
                 ret = await response.json()
@@ -126,7 +126,7 @@ async def get_setu(bot, chat_id, arg, r18, reply_to=None):
         async with aiohttp.ClientSession() as session:
             async with session.get(
                 ret["urls"]["original"],
-                proxy=getattr(config, "telegram_proxy", None),
+                proxy=config.proxy,
                 timeout=aiohttp.ClientTimeout(total=60),
                 headers={"referer": "https://www.pixiv.net/"},
             ) as response:

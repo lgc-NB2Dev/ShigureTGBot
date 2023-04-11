@@ -15,7 +15,6 @@ class Cfg(BaseModel):
     nickname: Set[str] = set()
 
     proxy: Optional[str] = None
-    telegram_proxy: Optional[str] = None
 
     ps_only_su: bool = False
     ps_blur_radius: int = 4

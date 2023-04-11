@@ -30,7 +30,7 @@ driver = get_driver()
 handler = on_command("pixiv_login", "Pixiv收藏夹同步登录", hide=True, permission=SUPERUSER)
 sync_handler = on_command("pixiv_sync", "Pixiv收藏夹同步", hide=True, permission=SUPERUSER)
 
-api = PixivAPI(proxy=config.telegram_proxy)
+api = PixivAPI(proxy=config.proxy)
 syncing = False
 
 
@@ -253,7 +253,7 @@ async def _sync(bot: Bot, _chat_id: int):
             async with ClientSession() as s:
                 async with s.get(
                     _u,
-                    proxy=config.telegram_proxy,
+                    proxy=config.proxy,
                     headers={
                         "Referer": "https://www.pixiv.net/",
                         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36",

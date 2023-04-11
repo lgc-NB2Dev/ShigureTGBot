@@ -58,13 +58,13 @@ async def get_anime_pic():
         await async_request(
             "https://api.lolicon.app/setu/v2",
             is_text=True,
-            proxy=config.telegram_proxy,
+            proxy=config.proxy,
             params={"proxy": 0, "excludeAI": 1, "tag": "萝莉|少女"},
         ),
     )
     return await async_request(
         r["data"][0]["urls"]["original"],  # type: ignore  # noqa: PGH003
-        proxy=config.telegram_proxy,
+        proxy=config.proxy,
         headers={"referer": "https://pixiv.net/"},
     )
 
@@ -74,7 +74,7 @@ async def download_file(bot: Bot, file_id: str) -> bytes:
     file_path = res.file_path
 
     url = f"https://api.telegram.org/file/bot{bot.bot_config.token}/{file_path}"
-    return await async_request(url, proxy=config.telegram_proxy)
+    return await async_request(url, proxy=config.proxy)
 
 
 async def get_tg_avatar(bot: Bot):

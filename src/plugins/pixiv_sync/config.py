@@ -12,7 +12,7 @@ class Config(BaseSettings):
     pixiv_sync_delay: int = 3600
     pixiv_send_delay: int = 10
 
-    telegram_proxy: Optional[str] = None
+    proxy: Optional[str] = None
     superusers: list[int]
 
     class Config:
