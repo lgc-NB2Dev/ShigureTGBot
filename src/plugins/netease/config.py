@@ -27,3 +27,4 @@ config = Config.parse_obj(global_config)
 
 data = PluginData(Path(__file__).parent.name)
 session = PluginData(Path(__file__).parent.name, "session.json")
+lyric = PluginData(Path(__file__).parent.name, "lyric.json")

@@ -3,19 +3,15 @@ import math
 import random
 import string
 from html import escape
+from typing import Any, Optional
 
 from aiohttp import ClientSession
 from nonebot import on
 from nonebot.adapters.telegram import Bot, Message
 from nonebot.adapters.telegram.event import CallbackQueryEvent, MessageEvent
 from nonebot.adapters.telegram.exception import NetworkError
-from nonebot.adapters.telegram.model import (
-    InlineKeyboardButton,
-    InlineKeyboardMarkup,
-)
-from nonebot.adapters.telegram.model import (
-    Message as MessageModel,
-)
+from nonebot.adapters.telegram.model import InlineKeyboardButton, InlineKeyboardMarkup
+from nonebot.adapters.telegram.model import Message as MessageModel
 from nonebot.log import logger
 from nonebot.matcher import Matcher
 from nonebot.permission import SUPERUSER
@@ -24,14 +20,16 @@ from nonebot.typing import T_State
 from ..base.cmd import CommandArg, on_command
 from ..base.const import LINE_SEP
 from ..base.rule import inline_rule
-from .config import config, data
+from .config import config, data, lyric
 from .data_source import (
     GetCurrentSession,
     get_track_audio,
     get_track_info,
+    get_track_lrc,
     login,
     search,
 )
+from .lrc_parser import merge, parse
 
 asyncio.get_event_loop().run_until_complete(login())
 
@@ -64,14 +62,19 @@ async def _(
             reply_to_message_id=event.message_id,
         )
 
+    is_id = str_arg.isdigit()
     msg_sent: MessageModel = await matcher.send(
-        "搜索中……",
+        "检测到输入了歌曲 ID，直接寻找对应歌曲……" if is_id else "搜索中……",
         reply_to_message_id=event.message_id,
     )
     msg_id = msg_sent.message_id
 
-    tmp_search[salt := get_random_str()] = str_arg
-    await edit_search_music_msg(bot, msg_id, event.chat.id, salt)
+    if is_id:
+        await get_music(bot, str_arg, msg_id, event.chat.id, None)
+
+    else:
+        tmp_search[salt := get_random_str()] = str_arg
+        await edit_search_music_msg(bot, msg_id, event.chat.id, salt)
 
 
 async def edit_search_music_msg(bot, msg_id, chat_id, salt, page=1):
@@ -273,7 +276,8 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
             [
                 InlineKeyboardButton(
                     text=f'歌手：{ar["name"]}',
-                    callback_data=f'netease|ar|{ar["id"]}|1',
+                    url=f'https://music.163.com/#/artist?id={ar["id"]}',
+                    # callback_data=f'netease|ar|{ar["id"]}|1',
                 ),
             ],
         )
@@ -282,7 +286,8 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
         [
             InlineKeyboardButton(
                 text=f'专辑：{al["name"]}',
-                callback_data=f'netease|al|{al["id"]}|1',
+                url=f'https://music.163.com/#/album?id={al["id"]}',
+                # callback_data=f'netease|al|{al["id"]}|1',
             ),
         ],
     )
@@ -326,6 +331,88 @@ async def get_music(bot: Bot, music_id, msg_id, chat_id, reply_to_id):
         msg += f'\n文件上传失败，请点击<a href="{audio_url}">这里</a>收听'
 
 
+def parse_lrc(lrc: dict[str, Any]) -> str:
+    def fmt_usr(usr: dict[str, Any]) -> str:
+        return f'<a href="https://music.163.com/#/user/home?id={usr["userid"]}">{escape(usr["nickname"])}</a>'
+
+    raw = lrc.get("lrc")
+    if (not raw) or (not (raw_lrc := raw["lyric"])):
+        return "该歌曲没有歌词"
+
+    lrcs = [
+        parse(x["lyric"])
+        for x in [
+            raw,
+            lrc.get("tlyric"),
+            lrc.get("romalrc"),
+        ]
+        if x
+    ]
+    lrcs = [x for x in lrcs if x]
+
+    lines = []
+    if not lrcs:
+        lines.append("<i>该歌曲没有滚动歌词</i>")
+        lines.append("")
+        lines.append(raw_lrc)
+    else:
+        only_one = len(lrcs) == 1
+        for li in merge(*lrcs):
+            if not only_one:
+                lines.append("")
+            lines.append(f"<b>{escape(li[0].lrc)}</b>")
+            lines.extend([f"{escape(x.lrc)}" for x in li[1:]])
+
+    lines.append("")
+    if usr := lrc.get("lyricUser"):
+        lines.append(f"歌词贡献者：{fmt_usr(usr)}")
+    if usr := lrc.get("transUser"):
+        lines.append(f"翻译贡献者：{fmt_usr(usr)}")
+
+    return "\n".join(lines).strip()
+
+
+async def music_lrc(
+    bot: Bot,
+    msg_id: Optional[int],
+    chat_id: int,
+    reply_to: Optional[int],
+    music_id: str,
+    _: int,  # page
+):
+    async def send_message(text: str, **kwargs):
+        nonlocal msg_id
+
+        if msg_id:
+            return await bot.edit_message_text(
+                text=text,
+                chat_id=chat_id,
+                message_id=msg_id,
+                **kwargs,
+            )
+
+        msg = await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            reply_to_message_id=reply_to,
+            **kwargs,
+        )
+        msg_id = msg.message_id
+        return msg
+
+    try:
+        lrc: str | None = lyric.get(music_id)
+        if not lrc:
+            lrc = parse_lrc(await get_track_lrc(music_id))
+            await lyric.set(music_id, lrc)
+    except:
+        logger.exception("获取歌词失败")
+        await send_message("获取歌词失败")
+        return
+
+    await send_message(lrc, parse_mode="HTML", disable_web_page_preview=True)
+
+
 inline_netease = on("", rule=inline_rule("netease"))
 
 
@@ -334,31 +421,53 @@ async def _(bot: Bot, event: CallbackQueryEvent, state: T_State):
     if not event.message:
         return
 
-    s_data = state["data"]
-    match s_data[1]:
-        case "music":
-            match s_data[2]:
-                case "page":
-                    await bot.answer_callback_query(callback_query_id=event.id)
-                    await edit_search_music_msg(
-                        bot,
-                        event.message.message_id,
-                        event.message.chat.id,
-                        s_data[3],
-                        int(s_data[4]),
-                    )
-                case "get":
-                    if event.message.reply_to_message:
-                        await bot.answer_callback_query(callback_query_id=event.id)
-                        await get_music(
-                            bot,
-                            int(s_data[3]),
-                            event.message.message_id,
-                            event.message.chat.id,
-                            event.message.reply_to_message.message_id,
-                        )
+    reply_to = (
+        event.message.reply_to_message.message_id
+        if event.message.reply_to_message
+        else None
+    )
 
-    await bot.answer_callback_query(callback_query_id=event.id, text="待更新")
+    s_data: list[str] = state["data"]
+    sub1 = s_data[1]
+    if sub1 == "music":
+        sub2 = s_data[2]
+        if sub2 == "page":
+            await edit_search_music_msg(
+                bot,
+                event.message.message_id,
+                event.message.chat.id,
+                s_data[3],
+                int(s_data[4]),
+            )
+            return
+
+        if sub2 == "get":
+            await get_music(
+                bot,
+                int(s_data[3]),
+                event.message.message_id,
+                event.message.chat.id,
+                reply_to,
+            )
+            return
+
+        if sub2 == "lrc":
+            await bot.answer_callback_query(callback_query_id=event.id)
+            await music_lrc(
+                bot,
+                None,  # new msg
+                event.message.chat.id,
+                event.message.message_id,
+                s_data[3],
+                int(s_data[4]),
+            )
+            return
+
+        if sub2 == "comment":
+            await bot.answer_callback_query(callback_query_id=event.id, text="待更新")
+            return
+
+    # await bot.answer_callback_query(callback_query_id=event.id, text="待更新")
 
 
 cmd_relogin = on_command("netease_relogin", "网易云重登", hide=True, permission=SUPERUSER)

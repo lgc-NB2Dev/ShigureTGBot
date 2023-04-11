@@ -10,7 +10,7 @@ from pyncm import (
 )
 from pyncm.apis.cloudsearch import SONG, GetSearchResult
 from pyncm.apis.login import LoginViaCellphone
-from pyncm.apis.track import GetTrackAudio, GetTrackDetail
+from pyncm.apis.track import GetTrackAudio, GetTrackDetail, GetTrackLyrics
 
 from ..base.util import async_wrapper as wrapper
 from .config import config, session
@@ -100,4 +100,10 @@ async def get_track_audio(
         encodeType=encode_type,
     )
     logger.debug(f"GetTrackAudio - {res}")
+    return res  # type: ignore  # noqa: PGH003
+
+
+async def get_track_lrc(song_id: str) -> dict[str, Any]:
+    res = await wrapper(GetTrackLyrics, song_id)
+    logger.debug(f"GetTrackLyrics - {res}")
     return res  # type: ignore  # noqa: PGH003
