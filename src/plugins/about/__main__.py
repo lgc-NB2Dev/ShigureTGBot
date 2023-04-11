@@ -20,8 +20,8 @@ async def _(matcher: Matcher, event: MessageEvent):
             '  - <a href="https://github.com/MinatoAquaCrews/nonebot_plugin_crazy_thursday">'
             "nonebot-plugin-crazy-thursday</a>\n"
             "    疯狂星期四语录原插件\n"
-            '  - <a href="https://github.com/xipesoy/zhenxun_plugin_meiriyiju">'
-            "zhenxun-plugin-meiriyiju</a>\n"
+            '  - <a href="https://github.com/Ikaros-521/nonebot_plugin_random_stereotypes">'
+            "nonebot_plugin_random_stereotypes</a>\n"
             "    发癫语录原插件\n"
             f"{LINE_SEP}\n"
             '<a href="https://t.me/stu2333_pd/50">请我喝杯奶茶</a> | '
