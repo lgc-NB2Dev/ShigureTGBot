@@ -343,8 +343,8 @@ def parse_lrc(lrc: dict[str, Any]) -> str:
         parse(x["lyric"])
         for x in [
             raw,
-            lrc.get("tlyric"),
             lrc.get("romalrc"),
+            lrc.get("tlyric"),
         ]
         if x
     ]
