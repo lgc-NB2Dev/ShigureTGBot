@@ -22,6 +22,7 @@ aiofiles = ">=0.8.0,<0.9.0"
 nonebot-plugin-apscheduler = "^0.2.0"
 nonebot-adapter-telegram = "^0.1.0b10"
 nonebot-plugin-fuckyou = "^0.1.0"
+pygments = "^2.15.1"
 
 [tool.poetry.dev-dependencies]
 nb-cli = "^1.0.5"
@@ -48,6 +49,7 @@ ignore = [
     "E722",
     "B008",
     "TRY002",
+    "TRY003",
     "RUF001",
     "RUF002",
     "RUF003",
