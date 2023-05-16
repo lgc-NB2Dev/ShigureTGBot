@@ -354,6 +354,8 @@ def parse_lrc(lrc: dict[str, Any]) -> str:
     if not lrcs:
         lines.append("<i>该歌曲没有滚动歌词</i>")
         lines.append("")
+        lines.append("--------")
+        lines.append("")
         lines.append(raw_lrc)
     else:
         only_one = len(lrcs) == 1
@@ -363,11 +365,17 @@ def parse_lrc(lrc: dict[str, Any]) -> str:
             lines.append(f"<b>{escape(li[0].lrc)}</b>")
             lines.extend([f"{escape(x.lrc)}" for x in li[1:]])
 
-    lines.append("")
-    if usr := lrc.get("lyricUser"):
-        lines.append(f"歌词贡献者：{fmt_usr(usr)}")
-    if usr := lrc.get("transUser"):
-        lines.append(f"翻译贡献者：{fmt_usr(usr)}")
+    lrc_user = lrc.get("lyricUser")
+    trans_user = lrc.get("transUser")
+    if lrc_user or trans_user:
+        lines.append("")
+        lines.append("--------")
+        lines.append("")
+
+        if lrc_user:
+            lines.append(f"歌词贡献者：{fmt_usr(lrc_user)}")
+        if trans_user:
+            lines.append(f"翻译贡献者：{fmt_usr(trans_user)}")
 
     return "\n".join(lines).strip()
 
