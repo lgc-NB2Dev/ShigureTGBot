@@ -11,6 +11,7 @@ class Config(BaseSettings):
     pixiv_sync_to_chats: list[int] = []
     pixiv_sync_delay: int = 3600
     pixiv_send_delay: int = 10
+    pixiv_send_group_delay: int = 60
 
     proxy: Optional[str] = None
     superusers: list[int]

@@ -20,7 +20,6 @@ from nonebot_plugin_apscheduler import scheduler
 
 from ..base.cmd import on_command
 from ..base.const import LINE_SEP
-from ..cache import PluginCache
 from .config import config, data
 from .data_source import PixivAPI
 from .util import split_list
@@ -235,7 +234,7 @@ async def _sync(bot: Bot, _chat_id: int):
         )
 
         urls: list[str] = []
-        files: list[PluginCache] = []
+        files: list[tuple[str, bytes]] = []
         if i.get("meta_single_page"):
             urls.append(i["meta_single_page"]["original_image_url"])
         elif p := i.get("meta_pages"):
@@ -260,9 +259,7 @@ async def _sync(bot: Bot, _chat_id: int):
                     },
                 ) as r:
                     pic = await r.read()
-            cache = PluginCache(_u.split("/")[-1])
-            await cache.set_bytes(pic)
-            files.append(cache)  # 防止对象销毁  # noqa: B023
+            files.append((_u.split("/")[-1], pic))  # 防止对象销毁  # noqa: B023
 
         tasks = []
         for u in urls:
@@ -292,22 +289,25 @@ async def _sync(bot: Bot, _chat_id: int):
                 if len(files) == 1:
                     await bot.send_document(
                         chat_id=chat_id,
-                        document=files[0].get_path(),
+                        document=files[0],
                         caption=caption,
                         parse_mode="HTML",
                     )
                     await asyncio.sleep(config.pixiv_send_delay)  # QPS限制
                 else:
-                    docs = [InputMediaDocument(media=x.get_path()) for x in files]
-                    docs.sort(
-                        key=lambda it: int(it.media.split("_p")[-1].split(".")[0]),
+                    files.sort(
+                        key=lambda it: (
+                            int(x["p"])
+                            if (x := re.search("_p(?P<p>[0-9]+)", it[0]))
+                            else 0
+                        ),
                     )
+                    docs = [InputMediaDocument(media=x) for x in files]
                     docs[-1].caption = caption
                     docs[-1].parse_mode = "HTML"
 
                     g_id = None
-                    d_len = len(docs)
-                    for ii, d in enumerate(split_list(docs, 10)):
+                    for d in split_list(docs, 10):
                         g_id = (
                             await bot.send_media_group(
                                 chat_id=chat_id,
@@ -316,11 +316,7 @@ async def _sync(bot: Bot, _chat_id: int):
                             )
                         )[-1].message_id
                         # 合并消息QPS限制更大（因为一张图等于一条消息）
-                        await asyncio.sleep(
-                            60
-                            if (d_len > 1 and ii < (d_len - 1))
-                            else config.pixiv_sync_delay,
-                        )
+                        await asyncio.sleep(config.pixiv_send_group_delay)
             except Exception as e:
                 logger.exception("上传图片失败")
                 await bot.send_message(
