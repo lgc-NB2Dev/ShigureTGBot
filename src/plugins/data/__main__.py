@@ -6,7 +6,7 @@ from ..base.util import async_wrapper
 
 class PluginData:
     def __init__(self, path, name="data.json"):
-        real_path = Path(__file__).parent.parent.parent / "data" / path
+        real_path = Path.cwd() / "data" / path
         if not real_path.exists():
             real_path.mkdir(parents=True)
 

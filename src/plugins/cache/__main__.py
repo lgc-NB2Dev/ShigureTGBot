@@ -5,7 +5,7 @@ from ..base.util import async_wrapper
 
 class PluginCache:
     def __init__(self, name):
-        real_path = Path(__file__).parent.parent.parent / "cache"
+        real_path = Path.cwd() / "cache"
         if not real_path.exists():
             real_path.mkdir(parents=True)
 

@@ -1,32 +1,39 @@
-[tool.poetry]
+[project]
+authors = [{ name = "student_2333", email = "lgc2333@126.com" }]
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "nonebot2[all]>=2.0.0",
+    "nonebot-adapter-telegram>=0.1.0b10",
+    "pyncm>=1.6.6",
+    "awaits>=0.0.1",
+    "aiohttp>=3.8.1",
+    "PixivPy-Async>=1.2.14",
+    "httpx>=0.23.3",
+    "pillow>=9.5.0",
+    "mcstatus>=10.0.2",
+    "pil-utils>=0.1.6",
+    "psutil>=5.9.4",
+    "aiofiles>=0.8.0",
+    "pygments>=2.15.1",
+    "nonebot-plugin-apscheduler>=0.2.0",
+    "nonebot-plugin-fuckyou>=0.1.0",
+]
 name = "ShigureTGBot"
 version = "0.2.3"
 description = "ShigureTGBot"
-authors = ["student_2333 <lgc2333@126.com>"]
 readme = "README.md"
 
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0.0"
-nonebot2 = { extras = ["fastapi", "httpx"], version = "^2.0.0rc4" }
-pyncm = "^1.6.6"
-awaits = "^0.0.1"
-aiohttp = "^3.8.1"
-pathlib = "^1.0.1"
-PixivPy-Async = "^1.2.14"
-httpx = "^0.23.3"
-pillow = "^9.5.0"
-mcstatus = "^10.0.2"
-pil-utils = "^0.1.6"
-psutil = "^5.9.4"
-aiofiles = ">=0.8.0,<0.9.0"
-nonebot-plugin-apscheduler = "^0.2.0"
-nonebot-adapter-telegram = "^0.1.0b10"
-nonebot-plugin-fuckyou = "^0.1.0"
-pygments = "^2.15.1"
+[tool.pdm]
 
-[tool.poetry.dev-dependencies]
-nb-cli = "^1.0.5"
+[tool.pdm.build]
+includes = []
 
+[tool.pdm.dev-dependencies]
+dev = [
+    "black>=23.3.0",
+    "ruff>=0.0.275",
+    "isort>=5.12.0",
+]
 [build-system]
 requires = ["poetry_core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
