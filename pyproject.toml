@@ -17,6 +17,7 @@ dependencies = [
     "pygments>=2.15.1",
     "nonebot-plugin-apscheduler>=0.2.0",
     "nonebot-plugin-fuckyou>=0.1.0",
+    "nb-cli>=1.2.2",
 ]
 name = "ShigureTGBot"
 version = "0.2.3"
